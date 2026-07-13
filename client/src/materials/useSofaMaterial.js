@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { MeshStandardMaterial } from "three";
-import { resolveSofaMaterial } from "./materialResolver.js";
+import { MeshPhysicalMaterial, Vector2 } from "three";
+import { resolveFabricPresentation, resolveSofaMaterial } from "./materialResolver.js";
 import { getCachedTextureState, loadCachedTexture } from "./textureCache.js";
 
 function useCachedTexture(reference, kind, repeat) {
@@ -23,7 +23,7 @@ function useCachedTexture(reference, kind, repeat) {
 }
 
 export function useSofaMaterial(input) {
-  const { color, material: materialMetadata, texture } = input;
+  const { color, fabricId, material: materialMetadata, texture } = input;
   const resolved = useMemo(
     () => resolveSofaMaterial({ color, material: materialMetadata, texture }),
     [color, materialMetadata, texture],
@@ -31,14 +31,23 @@ export function useSofaMaterial(input) {
   const baseColor = useCachedTexture(resolved.maps.baseColor, "baseColor", resolved.repeat);
   const normal = useCachedTexture(resolved.maps.normal, "normal", resolved.repeat);
   const roughness = useCachedTexture(resolved.maps.roughness, "roughness", resolved.repeat);
-  const material = useMemo(() => new MeshStandardMaterial({
+  const presentation = useMemo(() => resolveFabricPresentation(fabricId), [fabricId]);
+  const material = useMemo(() => new MeshPhysicalMaterial({
     color: resolved.color,
-    roughness: resolved.roughness,
-    metalness: resolved.metalness,
+    roughness: Math.max(resolved.roughness, presentation.roughnessFloor),
+    metalness: 0,
     map: baseColor.texture,
     normalMap: normal.texture,
+    normalScale: new Vector2(presentation.normalStrength, presentation.normalStrength),
     roughnessMap: roughness.texture,
-  }), [baseColor.texture, normal.texture, resolved.color, resolved.metalness, resolved.roughness, roughness.texture]);
+    sheen: presentation.sheen,
+    sheenColor: "#f7f7f4",
+    sheenRoughness: presentation.sheenRoughness,
+    clearcoat: presentation.clearcoat,
+    clearcoatRoughness: presentation.clearcoatRoughness,
+    specularIntensity: presentation.specularIntensity,
+    envMapIntensity: presentation.envMapIntensity,
+  }), [baseColor.texture, normal.texture, presentation, resolved.color, resolved.roughness, roughness.texture]);
 
   useEffect(() => () => material.dispose(), [material]);
 

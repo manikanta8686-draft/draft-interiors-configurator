@@ -3,6 +3,8 @@ import { Component } from "react";
 export default class ErrorBoundary extends Component {
   state = { hasError: false };
 
+  retry = () => this.setState({ hasError: false });
+
   static getDerivedStateFromError() { return { hasError: true }; }
 
   componentDidCatch(error, info) {
@@ -10,7 +12,11 @@ export default class ErrorBoundary extends Component {
   }
 
   render() {
-    if (this.state.hasError) return this.props.fallback;
+    if (this.state.hasError) {
+      return typeof this.props.fallback === "function"
+        ? this.props.fallback(this.retry)
+        : this.props.fallback;
+    }
     return this.props.children;
   }
 }

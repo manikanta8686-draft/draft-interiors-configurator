@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { colours, fabrics } from "../src/data/fabrics.js";
+import { colours, fabrics, getColourById, getFabricById } from "../src/data/fabrics.js";
 import {
   configurationReducer,
   createDefaultConfiguration,
@@ -9,6 +9,7 @@ import {
   resolveSofaModel,
 } from "../src/configurator/configuration.js";
 import {
+  resolveFabricPresentation,
   resolveSofaMaterial,
   resolveTextureReference,
   resolveTextureRepeat,
@@ -57,6 +58,34 @@ test("valid texture metadata resolves with safe repeat values", () => {
     roughness: "../textures/fabric-roughness.webp",
   });
   assert.deepEqual(resolved.repeat, [3, 2]);
+});
+
+test("fabric presentation profiles remain restrained and safely defaulted", () => {
+  assert.ok(resolveFabricPresentation("brushed-velvet").sheen > resolveFabricPresentation("cotton").sheen);
+  assert.ok(resolveFabricPresentation("textured-boucle").normalStrength > resolveFabricPresentation("leather").normalStrength);
+  assert.deepEqual(resolveFabricPresentation("unknown"), resolveFabricPresentation());
+});
+
+test("representative fabric and colour combinations retain calibrated textile response", () => {
+  const combinations = [
+    ["italian-linen", "oat", 0.78],
+    ["brushed-velvet", "moss", 0.52],
+    ["textured-boucle", "cloud", 0.92],
+    ["leather", "ink", 0.58],
+  ];
+
+  for (const [fabricId, colourId, minimumRoughness] of combinations) {
+    const fabric = getFabricById(fabricId);
+    const colour = getColourById(colourId);
+    const resolved = resolveSofaMaterial({ color: colour.hex, material: fabric.material, texture: fabric.texture });
+    const presentation = resolveFabricPresentation(fabricId);
+    assert.equal(resolved.color, colour.hex);
+    assert.ok(Math.max(resolved.roughness, presentation.roughnessFloor) >= minimumRoughness);
+    assert.ok(presentation.sheen <= 0.18);
+  }
+
+  assert.equal(resolveFabricPresentation("brushed-velvet").clearcoat, 0);
+  assert.ok(resolveFabricPresentation("leather").clearcoat > 0);
 });
 
 test("invalid material and texture metadata falls back safely", () => {

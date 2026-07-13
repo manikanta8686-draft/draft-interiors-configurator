@@ -9,8 +9,20 @@ import {
 } from "./configuration";
 import { ConfiguratorContext } from "./context";
 import { calculatePricing } from "../pricing/pricingEngine.js";
+import {
+  addSavedConfiguration,
+  createSavedConfigurationRecord,
+  deleteSavedConfiguration as removeSavedConfiguration,
+  initializeSavedConfigurations,
+  writeSavedConfigurations,
+} from "./persistence.js";
 
-function createInitialConfiguration(model) {
+function createInitialConfiguration({ model, sharedConfiguration, hasSharedConfiguration }) {
+  if (hasSharedConfiguration) {
+    return parseSavedConfiguration(sharedConfiguration, model)
+      ?? configurationReducer(undefined, { type: "reset", model });
+  }
+
   try {
     return parseSavedConfiguration(localStorage.getItem(DESIGN_STORAGE_KEY), model)
       ?? configurationReducer(undefined, { type: "reset", model });
@@ -19,8 +31,21 @@ function createInitialConfiguration(model) {
   }
 }
 
-export function ConfiguratorProvider({ model, children }) {
-  const [configuration, dispatch] = useReducer(configurationReducer, model, createInitialConfiguration);
+function createInitialSavedConfigurations() {
+  try {
+    return initializeSavedConfigurations(localStorage);
+  } catch {
+    return [];
+  }
+}
+
+export function ConfiguratorProvider({ model, sharedConfiguration, hasSharedConfiguration, children }) {
+  const [configuration, dispatch] = useReducer(
+    configurationReducer,
+    { model, sharedConfiguration, hasSharedConfiguration },
+    createInitialConfiguration,
+  );
+  const [savedConfigurations, setSavedConfigurations] = useState(createInitialSavedConfigurations);
   const [saved, setSaved] = useState(false);
   const pricing = useMemo(() => calculatePricing(configuration, model), [configuration, model]);
   const catalogue = useMemo(
@@ -42,27 +67,54 @@ export function ConfiguratorProvider({ model, children }) {
     dispatch({ type: "reset", model });
   }, [model]);
 
-  const saveConfiguration = useCallback(() => {
+  const saveConfiguration = useCallback((name) => {
+    const record = createSavedConfigurationRecord({ name, configuration });
+    if (!record) return false;
+    const items = addSavedConfiguration(savedConfigurations, record);
+    if (!writeSavedConfigurations(localStorage, items)) {
+      setSaved(false);
+      return false;
+    }
+
     const savedDesign = createSavedDesign(configuration, model, pricing.total);
+    setSavedConfigurations(items);
+    setSaved(true);
     try {
       localStorage.setItem(DESIGN_STORAGE_KEY, JSON.stringify(savedDesign));
-      setSaved(true);
     } catch {
-      setSaved(false);
+      // The versioned collection is authoritative; this write only preserves the legacy key.
     }
-  }, [configuration, model, pricing.total]);
+    return true;
+  }, [configuration, model, pricing.total, savedConfigurations]);
+
+  const deleteSavedConfiguration = useCallback((id) => {
+    const items = removeSavedConfiguration(savedConfigurations, id);
+    if (!writeSavedConfigurations(localStorage, items)) return false;
+    setSavedConfigurations(items);
+    return true;
+  }, [savedConfigurations]);
+
+  const loadConfiguration = useCallback((savedConfiguration) => {
+    if (savedConfiguration?.modelId !== model.id) return false;
+    setSaved(false);
+    dispatch({ type: "load", configuration: savedConfiguration, model });
+    return true;
+  }, [model]);
 
   const value = useMemo(() => ({
     ...catalogue,
     configuration,
+    deleteSavedConfiguration,
+    loadConfiguration,
     model,
     pricing,
     resetConfiguration,
     saveConfiguration,
     saved,
+    savedConfigurations,
     setOption,
     viewerConfiguration,
-  }), [catalogue, configuration, model, pricing, resetConfiguration, saveConfiguration, saved, setOption, viewerConfiguration]);
+  }), [catalogue, configuration, deleteSavedConfiguration, loadConfiguration, model, pricing, resetConfiguration, saveConfiguration, saved, savedConfigurations, setOption, viewerConfiguration]);
 
   return <ConfiguratorContext.Provider value={value}>{children}</ConfiguratorContext.Provider>;
 }

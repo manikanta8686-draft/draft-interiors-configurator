@@ -8,6 +8,9 @@ import { ConfiguratorProvider } from "../configurator/ConfiguratorContext";
 import { useConfigurator } from "../configurator/context";
 import { legFinishes, resolveSofaModel } from "../configurator/configuration";
 import { formatINR } from "../pricing/pricingEngine.js";
+import SavedConfigurations from "./SavedConfigurations.jsx";
+import { decodeShareConfiguration, SHARE_CONFIGURATION_PARAM } from "../configurator/share.js";
+import { getSofaModelById } from "../configurator/configuration.js";
 
 function Options({ label, value, items, onChange }) {
   return <section className="option-group"><p>{label}</p><div className="option-options">
@@ -26,7 +29,6 @@ function ConfiguratorView() {
     configuration: design,
     model,
     pricing,
-    saveConfiguration,
     saved,
     selectedColour,
     selectedFabric,
@@ -44,13 +46,17 @@ function ConfiguratorView() {
       <Options label="04 / LEG FINISH" value={design.legs} items={legFinishes} onChange={set("legs")} />
       <section className="option-group cushion"><p>05 / EXTRA CUSHIONS</p><div><button type="button" aria-label="Remove cushion" onClick={() => set("cushions")(Math.max(2, design.cushions - 1))}><Minus /></button><strong>{design.cushions}</strong><button type="button" aria-label="Add cushion" onClick={() => set("cushions")(Math.min(5, design.cushions + 1))}><Plus /></button><span>feather-filled cushions</span></div></section>
     </div>
-    <div className="viewer-panel"><div className="viewer"><ErrorBoundary fallback={<div className="viewer-fallback" role="status">The 3D preview is unavailable on this device. Your configuration and estimate are still available below.</div>}><SofaViewer {...viewerConfiguration} /></ErrorBoundary></div><div className="viewer-note"><span>DRAG TO ROTATE</span><span>LIVE MATERIAL PREVIEW</span></div><div className="summary"><div><p>YOUR DESIGN</p><h2>{model.name}</h2><span>{selectedFabric.name} · {selectedColour.name} · {design.size}</span></div><div><p>ESTIMATED TOTAL</p><motion.strong key={pricing.total} initial={{ opacity: .3, y: 4 }} animate={{ opacity: 1, y: 0 }}>{formatINR(pricing.total)}</motion.strong><dl className="price-breakdown"><div><dt>{pricing.base.label}</dt><dd>{formatINR(pricing.base.amount)}</dd></div>{appliedAdjustments.map((item) => <div key={item.id}><dt>{item.label}</dt><dd>{formatINR(item.amount, { showSign: true })}</dd></div>)}</dl><small>Estimated delivery: 6–8 weeks</small></div><button type="button" className="add-cart" onClick={saveConfiguration}>{saved ? "Design saved" : "Save design"}<span>+</span></button><a className="whatsapp" href={`https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(`I'd like a quote for my ${model.name}: ${selectedFabric.name}, ${selectedColour.name}, ${design.size}.`)}`} target="_blank" rel="noreferrer">WhatsApp quote <span>↗</span></a></div></div>
-  </div></main>;
+    <div className="viewer-panel"><div className="viewer"><ErrorBoundary fallback={<div className="viewer-fallback" role="status">The 3D preview is unavailable on this device. Your configuration and estimate are still available below.</div>}><SofaViewer {...viewerConfiguration} /></ErrorBoundary></div><div className="viewer-note"><span>DRAG TO ROTATE</span><span>LIVE MATERIAL PREVIEW</span></div><div className="summary"><div><p>YOUR DESIGN</p><h2>{model.name}</h2><span>{selectedFabric.name} · {selectedColour.name} · {design.size}</span></div><div><p>ESTIMATED TOTAL</p><motion.strong key={pricing.total} initial={{ opacity: .3, y: 4 }} animate={{ opacity: 1, y: 0 }}>{formatINR(pricing.total)}</motion.strong><dl className="price-breakdown"><div><dt>{pricing.base.label}</dt><dd>{formatINR(pricing.base.amount)}</dd></div>{appliedAdjustments.map((item) => <div key={item.id}><dt>{item.label}</dt><dd>{formatINR(item.amount, { showSign: true })}</dd></div>)}</dl><small>Estimated delivery: 6–8 weeks</small></div><button type="button" className="add-cart" onClick={() => document.getElementById("configuration-name")?.focus()}>{saved ? "Design saved" : "Save design"}<span>+</span></button><a className="whatsapp" href={`https://wa.me/${WHATSAPP_BUSINESS_NUMBER}?text=${encodeURIComponent(`I'd like a quote for my ${model.name}: ${selectedFabric.name}, ${selectedColour.name}, ${design.size}.`)}`} target="_blank" rel="noreferrer">WhatsApp quote <span>↗</span></a></div></div>
+  </div><SavedConfigurations /></main>;
 }
 
 export default function Configurator() {
   const [params] = useSearchParams();
-  const model = resolveSofaModel(params.get("model"));
+  const encodedConfiguration = params.get(SHARE_CONFIGURATION_PARAM);
+  const sharedConfiguration = decodeShareConfiguration(encodedConfiguration);
+  const requestedModel = getSofaModelById(params.get("model"));
+  const sharedModel = getSofaModelById(sharedConfiguration?.modelId);
+  const model = requestedModel ?? sharedModel ?? resolveSofaModel();
 
-  return <ConfiguratorProvider key={model.id} model={model}><ConfiguratorView /></ConfiguratorProvider>;
+  return <ConfiguratorProvider key={`${model.id}:${encodedConfiguration ?? "local"}`} model={model} sharedConfiguration={sharedConfiguration} hasSharedConfiguration={encodedConfiguration !== null}><ConfiguratorView /></ConfiguratorProvider>;
 }

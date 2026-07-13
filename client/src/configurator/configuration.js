@@ -12,8 +12,12 @@ export const DESIGN_STORAGE_KEY = "draft-interiors-design";
 export const CONFIGURATION_SCHEMA_VERSION = 2;
 export const legFinishes = ["Oak", "Walnut", "Brass"];
 
+export function getSofaModelById(modelId) {
+  return sofaModels.find((sofa) => sofa.id === modelId) ?? null;
+}
+
 export function resolveSofaModel(modelId) {
-  return sofaModels.find((sofa) => sofa.id === modelId) ?? sofaModels[0];
+  return getSofaModelById(modelId) ?? sofaModels[0];
 }
 
 function resolveFabricId(value) {
@@ -73,6 +77,8 @@ export function configurationReducer(state, action) {
   switch (action.type) {
     case "set-option":
       return normalizeConfiguration({ ...state, [action.option]: action.value }, action.model);
+    case "load":
+      return normalizeConfiguration(action.configuration, action.model);
     case "reset":
       return createDefaultConfiguration(action.model);
     default:

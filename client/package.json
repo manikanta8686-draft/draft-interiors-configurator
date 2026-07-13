@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "test": "node --test tests/pricingEngine.test.js tests/sofaMaterial.test.js",
+    "test": "node --test tests/pricingEngine.test.js tests/sofaMaterial.test.js tests/shareConfiguration.test.js tests/savedConfigurations.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

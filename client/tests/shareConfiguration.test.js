@@ -4,6 +4,8 @@ import { parseSavedConfiguration, resolveSofaModel } from "../src/configurator/c
 import {
   createSharePath,
   createShareUrl,
+  createPersistedSharePath,
+  createPersistedShareUrl,
   decodeShareConfiguration,
   encodeShareConfiguration,
   SHARE_CONFIGURATION_PARAM,
@@ -57,4 +59,17 @@ test("decoded outdated options are normalized through the existing state boundar
     legs: "Brass",
     cushions: 5,
   });
+});
+
+test("server-backed share paths use a separate parameter and preserve model selection", () => {
+  const serverId = "11111111-1111-4111-8111-111111111111";
+  const path = createPersistedSharePath(serverId, configuration.modelId);
+  const url = new URL(path, "https://draft.example");
+  assert.equal(url.searchParams.get("configuration"), serverId);
+  assert.equal(url.searchParams.get("model"), configuration.modelId);
+  assert.equal(url.searchParams.has(SHARE_CONFIGURATION_PARAM), false);
+  assert.equal(
+    createPersistedShareUrl(serverId, configuration.modelId, { origin: "https://draft.example" }),
+    `https://draft.example${path}`,
+  );
 });

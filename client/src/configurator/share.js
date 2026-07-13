@@ -1,5 +1,6 @@
 export const SHARE_CONFIGURATION_PARAM = "design";
 export const SHARE_PAYLOAD_VERSION = 1;
+export const PERSISTED_CONFIGURATION_PARAM = "configuration";
 
 function toBase64Url(value) {
   const bytes = new TextEncoder().encode(value);
@@ -61,4 +62,16 @@ export function createSharePath(configuration) {
 
 export function createShareUrl(configuration, location) {
   return `${location?.origin ?? ""}${createSharePath(configuration)}`;
+}
+
+export function createPersistedSharePath(serverId, modelId) {
+  const params = new URLSearchParams({
+    model: modelId,
+    [PERSISTED_CONFIGURATION_PARAM]: serverId,
+  });
+  return `/configurator?${params.toString()}`;
+}
+
+export function createPersistedShareUrl(serverId, modelId, location) {
+  return `${location?.origin ?? ""}${createPersistedSharePath(serverId, modelId)}`;
 }

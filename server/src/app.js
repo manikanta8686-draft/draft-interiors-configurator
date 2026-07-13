@@ -1,0 +1,59 @@
+import express from "express";
+import { ApiError } from "./errors.js";
+
+export function createApp({ configurationService, jsonBodyLimit = "16kb", logger = console }) {
+  const app = express();
+  app.disable("x-powered-by");
+  app.use((request, response, next) => {
+    response.set({
+      "Cache-Control": "no-store",
+      "Content-Security-Policy": "default-src 'none'",
+      "X-Content-Type-Options": "nosniff",
+    });
+    next();
+  });
+  app.use(express.json({ limit: jsonBodyLimit, strict: true }));
+
+  app.get("/api/v1/health", (request, response) => {
+    response.json({ data: { status: "ok" } });
+  });
+
+  app.post("/api/v1/configurations", (request, response, next) => {
+    try {
+      response.status(201).json({ data: configurationService.create(request.body) });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/v1/configurations/:id", (request, response, next) => {
+    try {
+      response.json({ data: configurationService.getById(request.params.id) });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.use((request, response) => {
+    response.status(404).json({ error: { code: "NOT_FOUND", message: "Resource not found." } });
+  });
+
+  app.use((error, request, response, next) => {
+    if (error instanceof ApiError) {
+      response.status(error.status).json({ error: { code: error.code, message: error.message } });
+      return;
+    }
+    if (error instanceof SyntaxError && Object.hasOwn(error, "body")) {
+      response.status(400).json({ error: { code: "INVALID_JSON", message: "Request body must be valid JSON." } });
+      return;
+    }
+    if (error?.type === "entity.too.large") {
+      response.status(413).json({ error: { code: "PAYLOAD_TOO_LARGE", message: "Request body is too large." } });
+      return;
+    }
+    logger.error("Configuration API request failed", error);
+    response.status(500).json({ error: { code: "INTERNAL_ERROR", message: "The request could not be completed." } });
+  });
+
+  return app;
+}

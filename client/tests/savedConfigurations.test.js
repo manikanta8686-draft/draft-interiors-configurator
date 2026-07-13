@@ -7,11 +7,13 @@ import {
 } from "../src/configurator/configuration.js";
 import {
   addSavedConfiguration,
+  attachServerId,
   createSavedConfigurationRecord,
   deleteSavedConfiguration,
   initializeSavedConfigurations,
   parseSavedConfigurations,
   readSavedConfigurations,
+  syncSavedConfiguration,
   writeSavedConfigurations,
 } from "../src/configurator/persistence.js";
 import { calculatePricing } from "../src/pricing/pricingEngine.js";
@@ -107,4 +109,50 @@ test("malformed or unavailable storage fails safely", () => {
   };
   assert.deepEqual(readSavedConfigurations(brokenStorage), []);
   assert.equal(writeSavedConfigurations(brokenStorage, []), false);
+});
+
+test("server IDs are attached alongside local IDs without rewriting local records", async () => {
+  const model = resolveSofaModel("the-mercer");
+  const record = createSavedConfigurationRecord({
+    id: "local-browser-id",
+    name: "Local design",
+    configuration: createDefaultConfiguration(model),
+  });
+  const storage = new MemoryStorage();
+  const items = [record];
+  writeSavedConfigurations(storage, items);
+
+  const synced = await syncSavedConfiguration({
+    items,
+    localId: record.id,
+    storage,
+    persist: async () => ({ id: "server-generated-id" }),
+  });
+  assert.equal(synced.status, "synced");
+  assert.equal(synced.items[0].id, "local-browser-id");
+  assert.equal(synced.items[0].serverId, "server-generated-id");
+  assert.equal(readSavedConfigurations(storage)[0].serverId, "server-generated-id");
+  assert.equal(record.serverId, undefined);
+});
+
+test("backend synchronization failures preserve the local-storage record", async () => {
+  const model = resolveSofaModel("the-mercer");
+  const record = createSavedConfigurationRecord({
+    id: "offline-local-id",
+    name: "Offline design",
+    configuration: createDefaultConfiguration(model),
+  });
+  const storage = new MemoryStorage();
+  const items = attachServerId([record], record.id, "");
+  writeSavedConfigurations(storage, items);
+
+  const result = await syncSavedConfiguration({
+    items,
+    localId: record.id,
+    storage,
+    persist: async () => { throw new Error("offline"); },
+  });
+  assert.equal(result.status, "offline");
+  assert.deepEqual(result.items, items);
+  assert.deepEqual(readSavedConfigurations(storage), items);
 });

@@ -2,7 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useConfigurator } from "../configurator/context.js";
 import { resolveSofaModel } from "../configurator/configuration.js";
-import { createSharePath, createShareUrl } from "../configurator/share.js";
+import {
+  createPersistedShareUrl,
+  createSharePath,
+  createShareUrl,
+} from "../configurator/share.js";
 
 async function copyText(value) {
   if (navigator.clipboard?.writeText) {
@@ -35,6 +39,9 @@ export default function SavedConfigurations() {
     configuration,
     deleteSavedConfiguration,
     loadConfiguration,
+    persistenceNotice,
+    persistenceStatus,
+    persistShareConfiguration,
     resetConfiguration,
     saveConfiguration,
     savedConfigurations,
@@ -55,10 +62,14 @@ export default function SavedConfigurations() {
   }
 
   async function share() {
-    const url = createShareUrl(configuration, window.location);
+    const serverId = await persistShareConfiguration();
+    const url = serverId
+      ? createPersistedShareUrl(serverId, configuration.modelId, window.location)
+      : createShareUrl(configuration, window.location);
     setShareLink(url);
     const copied = await copyText(url);
-    setNotice(copied ? "Share link copied." : "Automatic copy is unavailable. Select the link below to copy it.");
+    const fallback = serverId ? "" : " The backend is unavailable, so this link uses the compatible browser format.";
+    setNotice((copied ? "Share link copied." : "Automatic copy is unavailable. Select the link below to copy it.") + fallback);
   }
 
   function load(record) {
@@ -85,6 +96,10 @@ export default function SavedConfigurations() {
     </form>
     <div className="configuration-actions"><button type="button" onClick={share}>Copy share link</button><button type="button" onClick={reset}>Reset design</button></div>
     {shareLink && <label className="share-link-output">Share link<input value={shareLink} onFocus={(event) => event.target.select()} readOnly /></label>}
+    {persistenceStatus === "syncing" && <p className="configuration-notice" role="status">Saved locally. Syncing with the configuration service...</p>}
+    {persistenceStatus === "synced" && <p className="configuration-notice" role="status">Configuration backed up.</p>}
+    {persistenceStatus === "offline" && <p className="configuration-notice" role="status">Saved locally. The configuration service is currently unavailable.</p>}
+    {persistenceNotice && <p className="configuration-notice" role="status">{persistenceNotice}</p>}
     {notice && <p className="configuration-notice" role="status">{notice}</p>}
     <div className="saved-configuration-list">
       {savedConfigurations.length === 0 ? <p className="empty-saves">No saved configurations yet.</p> : savedConfigurations.map((record) => <article key={record.id}>

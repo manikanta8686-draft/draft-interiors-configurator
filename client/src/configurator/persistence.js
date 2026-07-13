@@ -24,14 +24,36 @@ function normalizeSavedRecord(record) {
   const configuration = normalizeConfiguration(record, model);
   const fallbackDate = new Date(0);
 
+  const serverId = typeof record.serverId === "string" && record.serverId.length <= 128
+    ? record.serverId
+    : null;
   return {
     id: record.id,
+    ...(serverId ? { serverId } : {}),
     name: record.name.trim().slice(0, 80),
     version: CONFIGURATION_SCHEMA_VERSION,
     ...configuration,
     createdAt: safeIsoDate(record.createdAt, fallbackDate),
     updatedAt: safeIsoDate(record.updatedAt, fallbackDate),
   };
+}
+
+export function attachServerId(items, localId, serverId) {
+  if (typeof serverId !== "string" || !serverId || serverId.length > 128) return items;
+  return items.map((item) => item.id === localId ? { ...item, serverId } : item);
+}
+
+export async function syncSavedConfiguration({ items, localId, storage, persist }) {
+  try {
+    const persisted = await persist();
+    const syncedItems = attachServerId(items, localId, persisted?.id);
+    if (syncedItems === items || !writeSavedConfigurations(storage, syncedItems)) {
+      return { items, status: "offline" };
+    }
+    return { items: syncedItems, status: "synced" };
+  } catch {
+    return { items, status: "offline" };
+  }
 }
 
 export function parseSavedConfigurations(value) {

@@ -11,11 +11,14 @@ import { ConfiguratorContext } from "./context";
 import { calculatePricing } from "../pricing/pricingEngine.js";
 import {
   addSavedConfiguration,
+  attachServerId,
   createSavedConfigurationRecord,
   deleteSavedConfiguration as removeSavedConfiguration,
   initializeSavedConfigurations,
+  syncSavedConfiguration,
   writeSavedConfigurations,
 } from "./persistence.js";
+import { createPersistedConfiguration } from "../services/configurationsApi.js";
 
 function createInitialConfiguration({ model, sharedConfiguration, hasSharedConfiguration }) {
   if (hasSharedConfiguration) {
@@ -39,7 +42,7 @@ function createInitialSavedConfigurations() {
   }
 }
 
-export function ConfiguratorProvider({ model, sharedConfiguration, hasSharedConfiguration, children }) {
+export function ConfiguratorProvider({ model, sharedConfiguration, hasSharedConfiguration, persistenceNotice = "", children }) {
   const [configuration, dispatch] = useReducer(
     configurationReducer,
     { model, sharedConfiguration, hasSharedConfiguration },
@@ -47,6 +50,7 @@ export function ConfiguratorProvider({ model, sharedConfiguration, hasSharedConf
   );
   const [savedConfigurations, setSavedConfigurations] = useState(createInitialSavedConfigurations);
   const [saved, setSaved] = useState(false);
+  const [persistenceStatus, setPersistenceStatus] = useState("idle");
   const pricing = useMemo(() => calculatePricing(configuration, model), [configuration, model]);
   const catalogue = useMemo(
     () => getConfigurationCatalogue(configuration, model),
@@ -84,8 +88,36 @@ export function ConfiguratorProvider({ model, sharedConfiguration, hasSharedConf
     } catch {
       // The versioned collection is authoritative; this write only preserves the legacy key.
     }
+    setPersistenceStatus("syncing");
+    void syncSavedConfiguration({
+      items,
+      localId: record.id,
+      storage: localStorage,
+      persist: () => createPersistedConfiguration({ name: record.name, configuration }),
+    }).then((result) => {
+      if (result.status === "synced") {
+        setSavedConfigurations((currentItems) => {
+          const syncedItems = attachServerId(currentItems, record.id, result.items.find((item) => item.id === record.id)?.serverId);
+          writeSavedConfigurations(localStorage, syncedItems);
+          return syncedItems;
+        });
+      }
+      setPersistenceStatus(result.status);
+    });
     return true;
   }, [configuration, model, pricing.total, savedConfigurations]);
+
+  const persistShareConfiguration = useCallback(async () => {
+    setPersistenceStatus("syncing");
+    try {
+      const record = await createPersistedConfiguration({ configuration });
+      setPersistenceStatus("synced");
+      return record.id;
+    } catch {
+      setPersistenceStatus("offline");
+      return null;
+    }
+  }, [configuration]);
 
   const deleteSavedConfiguration = useCallback((id) => {
     const items = removeSavedConfiguration(savedConfigurations, id);
@@ -107,6 +139,9 @@ export function ConfiguratorProvider({ model, sharedConfiguration, hasSharedConf
     deleteSavedConfiguration,
     loadConfiguration,
     model,
+    persistenceNotice,
+    persistenceStatus,
+    persistShareConfiguration,
     pricing,
     resetConfiguration,
     saveConfiguration,
@@ -114,7 +149,7 @@ export function ConfiguratorProvider({ model, sharedConfiguration, hasSharedConf
     savedConfigurations,
     setOption,
     viewerConfiguration,
-  }), [catalogue, configuration, deleteSavedConfiguration, loadConfiguration, model, pricing, resetConfiguration, saveConfiguration, saved, savedConfigurations, setOption, viewerConfiguration]);
+  }), [catalogue, configuration, deleteSavedConfiguration, loadConfiguration, model, persistenceNotice, persistenceStatus, persistShareConfiguration, pricing, resetConfiguration, saveConfiguration, saved, savedConfigurations, setOption, viewerConfiguration]);
 
   return <ConfiguratorContext.Provider value={value}>{children}</ConfiguratorContext.Provider>;
 }

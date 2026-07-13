@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import SofaViewer from "./SofaViewer";
@@ -9,8 +10,13 @@ import { useConfigurator } from "../configurator/context";
 import { legFinishes, resolveSofaModel } from "../configurator/configuration";
 import { formatINR } from "../pricing/pricingEngine.js";
 import SavedConfigurations from "./SavedConfigurations.jsx";
-import { decodeShareConfiguration, SHARE_CONFIGURATION_PARAM } from "../configurator/share.js";
+import {
+  decodeShareConfiguration,
+  PERSISTED_CONFIGURATION_PARAM,
+  SHARE_CONFIGURATION_PARAM,
+} from "../configurator/share.js";
 import { getSofaModelById } from "../configurator/configuration.js";
+import { readPersistedConfiguration } from "../services/configurationsApi.js";
 
 function Options({ label, value, items, onChange }) {
   return <section className="option-group"><p>{label}</p><div className="option-options">
@@ -53,10 +59,39 @@ function ConfiguratorView() {
 export default function Configurator() {
   const [params] = useSearchParams();
   const encodedConfiguration = params.get(SHARE_CONFIGURATION_PARAM);
-  const sharedConfiguration = decodeShareConfiguration(encodedConfiguration);
+  const inlineConfiguration = decodeShareConfiguration(encodedConfiguration);
+  const persistedId = encodedConfiguration === null
+    ? params.get(PERSISTED_CONFIGURATION_PARAM)
+    : null;
+  const [persistedResult, setPersistedResult] = useState(null);
+
+  useEffect(() => {
+    if (!persistedId) return;
+    let active = true;
+    readPersistedConfiguration(persistedId).then(
+      (record) => active && setPersistedResult({ id: persistedId, record, status: "loaded" }),
+      () => active && setPersistedResult({ id: persistedId, status: "failed" }),
+    );
+    return () => { active = false; };
+  }, [persistedId]);
+
+  if (persistedId && persistedResult?.id !== persistedId) {
+    return <main className="loading">Restoring your saved design...</main>;
+  }
+
+  const persistedConfiguration = persistedResult?.status === "loaded"
+    ? persistedResult.record.configuration
+    : null;
+  const sharedConfiguration = inlineConfiguration ?? persistedConfiguration;
   const requestedModel = getSofaModelById(params.get("model"));
   const sharedModel = getSofaModelById(sharedConfiguration?.modelId);
-  const model = requestedModel ?? sharedModel ?? resolveSofaModel();
+  const model = persistedConfiguration
+    ? sharedModel ?? resolveSofaModel()
+    : requestedModel ?? sharedModel ?? resolveSofaModel();
+  const persistenceNotice = persistedResult?.status === "failed"
+    ? "That server-backed share link could not be restored. Your local design remains available."
+    : "";
+  const hasSharedConfiguration = encodedConfiguration !== null || Boolean(persistedConfiguration);
 
-  return <ConfiguratorProvider key={`${model.id}:${encodedConfiguration ?? "local"}`} model={model} sharedConfiguration={sharedConfiguration} hasSharedConfiguration={encodedConfiguration !== null}><ConfiguratorView /></ConfiguratorProvider>;
+  return <ConfiguratorProvider key={`${model.id}:${encodedConfiguration ?? persistedId ?? "local"}:${persistedResult?.status ?? "idle"}`} model={model} sharedConfiguration={sharedConfiguration} hasSharedConfiguration={hasSharedConfiguration} persistenceNotice={persistenceNotice}><ConfiguratorView /></ConfiguratorProvider>;
 }

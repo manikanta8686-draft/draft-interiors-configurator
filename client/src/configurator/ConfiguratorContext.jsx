@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useReducer, useState } from "react";
 import {
-  calculatePrice,
   configurationReducer,
   createSavedDesign,
   DESIGN_STORAGE_KEY,
@@ -9,6 +8,7 @@ import {
   parseSavedConfiguration,
 } from "./configuration";
 import { ConfiguratorContext } from "./context";
+import { calculatePricing } from "../pricing/pricingEngine.js";
 
 function createInitialConfiguration(model) {
   try {
@@ -22,7 +22,7 @@ function createInitialConfiguration(model) {
 export function ConfiguratorProvider({ model, children }) {
   const [configuration, dispatch] = useReducer(configurationReducer, model, createInitialConfiguration);
   const [saved, setSaved] = useState(false);
-  const price = useMemo(() => calculatePrice(configuration, model), [configuration, model]);
+  const pricing = useMemo(() => calculatePricing(configuration, model), [configuration, model]);
   const catalogue = useMemo(
     () => getConfigurationCatalogue(configuration, model),
     [configuration, model],
@@ -43,26 +43,26 @@ export function ConfiguratorProvider({ model, children }) {
   }, [model]);
 
   const saveConfiguration = useCallback(() => {
-    const savedDesign = createSavedDesign(configuration, model, price);
+    const savedDesign = createSavedDesign(configuration, model, pricing.total);
     try {
       localStorage.setItem(DESIGN_STORAGE_KEY, JSON.stringify(savedDesign));
       setSaved(true);
     } catch {
       setSaved(false);
     }
-  }, [configuration, model, price]);
+  }, [configuration, model, pricing.total]);
 
   const value = useMemo(() => ({
     ...catalogue,
     configuration,
     model,
-    price,
+    pricing,
     resetConfiguration,
     saveConfiguration,
     saved,
     setOption,
     viewerConfiguration,
-  }), [catalogue, configuration, model, price, resetConfiguration, saveConfiguration, saved, setOption, viewerConfiguration]);
+  }), [catalogue, configuration, model, pricing, resetConfiguration, saveConfiguration, saved, setOption, viewerConfiguration]);
 
   return <ConfiguratorContext.Provider value={value}>{children}</ConfiguratorContext.Provider>;
 }

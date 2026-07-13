@@ -80,15 +80,6 @@ export function configurationReducer(state, action) {
   }
 }
 
-export function calculatePrice(configuration, model) {
-  const fabric = getFabricById(configuration.fabricId);
-  return model.price
-    + (fabric?.priceAdjustment ?? 0)
-    + (configuration.legs === "Brass" ? 8000 : 0)
-    + (configuration.cushions - 3) * 2800
-    + (configuration.size !== model.sizes[0] ? 14000 : 0);
-}
-
 export function createSavedDesign(configuration, model, price, savedAt = new Date()) {
   return {
     version: CONFIGURATION_SCHEMA_VERSION,

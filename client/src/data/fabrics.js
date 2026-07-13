@@ -17,7 +17,7 @@ export const colours = [
 
 const colourIds = colours.map((colour) => colour.id);
 const unrestrictedCompatibility = { modelIds: null, modelCategories: null };
-const pendingTexture = { baseColor: null, normal: null, roughness: null };
+const pendingTexture = { baseColor: null, normal: null, roughness: null, repeat: null };
 
 export const fabrics = [
   {
@@ -74,7 +74,7 @@ export const fabrics = [
     compatibility: unrestrictedCompatibility,
     available: true,
     colors: colourIds,
-    material: { roughness: 0.72, metalness: 0 },
+    material: { roughness: 0.55, metalness: 0 },
   },
   {
     id: "cotton",
@@ -88,7 +88,7 @@ export const fabrics = [
     compatibility: unrestrictedCompatibility,
     available: true,
     colors: colourIds,
-    material: { roughness: 0.72, metalness: 0 },
+    material: { roughness: 0.82, metalness: 0 },
   },
   {
     id: "performance-fabric",
@@ -102,7 +102,7 @@ export const fabrics = [
     compatibility: unrestrictedCompatibility,
     available: true,
     colors: colourIds,
-    material: { roughness: 0.72, metalness: 0 },
+    material: { roughness: 0.68, metalness: 0 },
   },
 ];
 

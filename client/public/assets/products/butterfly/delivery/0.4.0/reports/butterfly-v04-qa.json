@@ -1,0 +1,35 @@
+{
+  "assetId": "butterfly",
+  "version": "0.4.0",
+  "status": "review",
+  "catalogueModelId": null,
+  "geometryBaseline": "Butterfly Geometry v03 (Approved)",
+  "dimensionsMetres": {
+    "x": 1.88,
+    "y": 1.02,
+    "z": 0.9
+  },
+  "meshCount": 14,
+  "triangleCount": 59184,
+  "uvMappedMeshCount": 14,
+  "materialRoles": [
+    "upholstery_primary",
+    "piping",
+    "stitching",
+    "legs_matte_black"
+  ],
+  "checks": {
+    "semanticMeshNames": "passed",
+    "dimensions": "passed",
+    "floorOrigin": "passed",
+    "appliedTransforms": "passed",
+    "uvRetentionAfterGlbReimport": "passed",
+    "materialRolesAfterGlbReimport": "passed",
+    "catalogueIsolation": "passed"
+  },
+  "limitations": [
+    "LOD1 and LOD2 are not generated.",
+    "Runtime texture maps are not yet baked or compressed.",
+    "The asset is not customer-selectable while status is review."
+  ]
+}

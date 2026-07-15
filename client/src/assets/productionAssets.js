@@ -29,9 +29,9 @@ export const butterflyProductionAsset = Object.freeze({
   id: "butterfly",
   displayName: "Butterfly",
   catalogueModelId: null,
-  version: "1.0.0",
-  status: "awaiting-glb",
-  sourceRevision: "2026-07-15",
+  version: "0.4.0",
+  status: "review",
+  sourceRevision: "butterfly-geometry-v03-approved",
   coordinateSystem: Object.freeze({
     units: "metres",
     upAxis: "Y",
@@ -70,10 +70,10 @@ export const butterflyProductionAsset = Object.freeze({
     Object.freeze({
       id: "butterfly-1880",
       label: "1880 × 900 mm",
-      assetUri: null,
-      fallbackImageUri: null,
+      assetUri: "/assets/products/butterfly/delivery/0.4.0/models/butterfly-1880-lod0.glb",
+      fallbackImageUri: "/assets/products/butterfly/delivery/0.4.0/previews/butterfly-v04-preview.png",
       expectedBoundsMetres: Object.freeze({ x: 1.88, y: 1.02, z: 0.9 }),
-      status: "awaiting-glb",
+      status: "review",
     }),
   ]),
 });
@@ -114,7 +114,9 @@ export function getProductionAssetReadiness(asset) {
   const validation = validateProductionAssetManifest(asset);
   if (!validation.valid) return { status: "invalid", errors: validation.errors };
   const missingFiles = asset.variants.filter((variant) => !variant.assetUri).map((variant) => variant.id);
-  return missingFiles.length > 0
-    ? { status: "awaiting-glb", missingFiles }
+  if (missingFiles.length > 0) return { status: "awaiting-glb", missingFiles };
+  const awaitingApproval = asset.status !== "approved" || asset.variants.some((variant) => variant.status !== "approved");
+  return awaitingApproval
+    ? { status: "review", missingFiles: [] }
     : { status: "ready", missingFiles: [] };
 }

@@ -10,7 +10,7 @@ import {
 import { createDefaultConfiguration, getViewerConfiguration } from "../src/configurator/configuration.js";
 import { sofaModels } from "../src/data/sofas.js";
 
-test("Butterfly is a valid inactive production asset contract", () => {
+test("Butterfly is a valid inactive internal review asset", () => {
   const validation = validateProductionAssetManifest(butterflyProductionAsset);
   assert.deepEqual(validation, { valid: true, errors: [] });
   assert.equal(butterflyProductionAsset.catalogueModelId, null);
@@ -18,11 +18,20 @@ test("Butterfly is a valid inactive production asset contract", () => {
   assert.equal(getProductionAsset("unknown"), null);
 });
 
-test("Butterfly remains unavailable until a real GLB is supplied", () => {
+test("Butterfly remains unavailable while its supplied GLB is under review", () => {
   assert.deepEqual(getProductionAssetReadiness(butterflyProductionAsset), {
-    status: "awaiting-glb",
-    missingFiles: ["butterfly-1880"],
+    status: "review",
+    missingFiles: [],
   });
+});
+
+test("only an explicitly approved Butterfly asset becomes ready", () => {
+  const approved = {
+    ...butterflyProductionAsset,
+    status: "approved",
+    variants: butterflyProductionAsset.variants.map((variant) => ({ ...variant, status: "approved" })),
+  };
+  assert.deepEqual(getProductionAssetReadiness(approved), { status: "ready", missingFiles: [] });
 });
 
 test("invalid production manifests fail closed", () => {

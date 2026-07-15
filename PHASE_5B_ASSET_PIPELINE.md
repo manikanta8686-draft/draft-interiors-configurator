@@ -1,5 +1,7 @@
 # Phase 5B — Production Product Asset Pipeline
 
+The normative authoring, delivery, naming, performance, and approval rules are defined in `DRAFT_INTERIORS_3D_ASSET_STANDARD.md`.
+
 Butterfly is the first physical reference model for the production pipeline. It is intentionally not mapped to a user-facing catalogue entry yet. The current procedural viewer remains labelled illustrative until an authored GLB passes this contract.
 
 ## Pipeline boundary

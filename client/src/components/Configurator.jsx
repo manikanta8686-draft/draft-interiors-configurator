@@ -12,6 +12,7 @@ import { formatINR } from "../pricing/pricingEngine.js";
 import { PREMIUM_EASE, PREMIUM_MOTION } from "../motion/premiumMotion.js";
 import SavedConfigurations from "./SavedConfigurations.jsx";
 import EnquiryForm from "./EnquiryForm.jsx";
+import { LoadingState } from "./SystemStates.jsx";
 import {
   decodeShareConfiguration,
   PERSISTED_CONFIGURATION_PARAM,
@@ -79,7 +80,7 @@ export default function Configurator() {
   }, [persistedId]);
 
   if (persistedId && persistedResult?.id !== persistedId) {
-    return <main className="loading">Restoring your saved design...</main>;
+    return <LoadingState label="Restoring your saved design..." />;
   }
 
   const persistedConfiguration = persistedResult?.status === "loaded"

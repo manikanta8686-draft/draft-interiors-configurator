@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useConfigurator } from "../configurator/context.js";
 import { resolveSofaModel } from "../configurator/configuration.js";
+import { EmptyState } from "./SystemStates.jsx";
 import {
   createPersistedShareUrl,
   createSharePath,
@@ -102,7 +103,7 @@ export default function SavedConfigurations() {
     {persistenceNotice && <p className="configuration-notice" role="status">{persistenceNotice}</p>}
     {notice && <p className="configuration-notice" role="status">{notice}</p>}
     <div className="saved-configuration-list">
-      {savedConfigurations.length === 0 ? <p className="empty-saves">No saved configurations yet.</p> : savedConfigurations.map((record) => <article key={record.id}>
+      {savedConfigurations.length === 0 ? <EmptyState title="No saved configurations." message="Name this design to keep it here for your next visit." /> : savedConfigurations.map((record) => <article key={record.id}>
         <div><h3>{record.name}</h3><p>{resolveSofaModel(record.modelId).name} · {new Date(record.updatedAt).toLocaleDateString("en-IN")}</p></div>
         <div><button type="button" onClick={() => load(record)}>Load</button><button type="button" onClick={() => remove(record)}>Delete</button></div>
       </article>)}

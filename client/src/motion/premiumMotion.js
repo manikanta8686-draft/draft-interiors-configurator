@@ -2,8 +2,21 @@
 export const PREMIUM_EASE = [1 / 3, 0, 2 / 3, 1];
 
 export const PREMIUM_MOTION = Object.freeze({
+  instantDuration: 0.12,
   uiDuration: 0.22,
+  panelDuration: 0.36,
   viewerDuration: 0.48,
+});
+
+export const pageTransition = Object.freeze({
+  duration: PREMIUM_MOTION.uiDuration,
+  ease: PREMIUM_EASE,
+});
+
+export const revealTransition = (delay = 0) => ({
+  duration: PREMIUM_MOTION.panelDuration,
+  delay,
+  ease: PREMIUM_EASE,
 });
 
 export function easePremium(progress) {

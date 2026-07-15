@@ -1,0 +1,84 @@
+:root {
+  color-scheme: light;
+  --brand-forest: #284f40;
+  --brand-forest-hover: #1f4235;
+  --brand-walnut: #68471e;
+  --brand-bronze: #8e6939;
+  --brand-bronze-soft: #b69a77;
+  --ink: #25251f;
+  --text: #443e35;
+  --muted: #6f685e;
+  --subtle: #847b70;
+  --cream: #fbfaf7;
+  --surface: #fffdf9;
+  --surface-raised: #ffffff;
+  --sand: #f4f0e9;
+  --stone: #ede5da;
+  --showroom: #dfe1dd;
+  --line: #ded7cc;
+  --line-strong: #cfc2b3;
+  --success: #456d57;
+  --warning: #8a652f;
+  --error: #8f3e35;
+  --focus: #8c6635;
+  --skeleton-base: #e8e1d7;
+  --skeleton-highlight: #f7f3ed;
+  --gold: var(--brand-bronze);
+
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "DM Sans", Arial, sans-serif;
+  --font-meta: "DM Mono", monospace;
+  --type-display-xl: clamp(3rem, 5.2vw, 4.875rem);
+  --type-display-lg: clamp(2.25rem, 4vw, 3.625rem);
+  --type-display-md: clamp(2rem, 3vw, 2.625rem);
+  --type-title-lg: 2.125rem;
+  --type-title-md: 1.6875rem;
+  --type-title-sm: 1.125rem;
+  --type-body-lg: .9375rem;
+  --type-body: .8125rem;
+  --type-body-sm: .75rem;
+  --type-meta: .625rem;
+  --leading-display: 1;
+  --leading-body: 1.7;
+  --tracking-meta: .14em;
+
+  --space-1: .25rem;
+  --space-2: .5rem;
+  --space-3: .75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+  --space-10: 8rem;
+  --page-gutter: 7vw;
+  --container: 77.5rem;
+  --content-narrow: 40.625rem;
+  --nav-height: 4.875rem;
+
+  --radius-sm: .25rem;
+  --radius-md: .5rem;
+  --radius-lg: .75rem;
+  --radius-xl: 1rem;
+  --radius-round: 999px;
+  --shadow-card: 0 1.125rem 3.125rem rgb(73 60 44 / 6%);
+  --shadow-panel: 0 1.625rem 4.375rem rgb(73 60 44 / 8%);
+  --shadow-floating: 0 .75rem 2rem rgb(37 37 31 / 16%);
+
+  --motion-instant: 120ms;
+  --motion-ui: 220ms;
+  --motion-panel: 360ms;
+  --motion-viewer: 480ms;
+  --motion-ease: cubic-bezier(.3333, 0, .6667, 1);
+  --motion-shimmer: 1400ms;
+}
+
+@media (max-width: 800px) {
+  :root {
+    --page-gutter: 5vw;
+    --type-display-xl: clamp(2.625rem, 12vw, 3.75rem);
+    --space-9: 4rem;
+    --space-10: 5rem;
+  }
+}

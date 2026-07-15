@@ -133,6 +133,8 @@ export function getViewerConfiguration(configuration, model) {
     : configuration.size.includes("160") || configuration.size.includes("90") ? "Compact" : "Standard";
 
   return {
+    modelId: model.id,
+    exactSize: configuration.size,
     color: selectedColour.hex,
     fabricId: selectedFabric.id,
     fabricName: selectedFabric.name,

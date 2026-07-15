@@ -1,8 +1,19 @@
 import express from "express";
-import { ApiError } from "./errors.js";
+import { ApiError, RateLimitError } from "./errors.js";
 
-export function createApp({ configurationService, jsonBodyLimit = "16kb", logger = console }) {
+function createEnquiryRateLimiter({ max = 5, windowMs = 15 * 60 * 1000 } = {}) {
+  const attempts = new Map();
+  return (key, now = Date.now()) => {
+    const active = (attempts.get(key) ?? []).filter((timestamp) => now - timestamp < windowMs);
+    if (active.length >= max) throw new RateLimitError();
+    active.push(now);
+    attempts.set(key, active);
+  };
+}
+
+export function createApp({ configurationService, enquiryService, enquiryRateLimit, jsonBodyLimit = "16kb", logger = console }) {
   const app = express();
+  const limitEnquiry = createEnquiryRateLimiter(enquiryRateLimit);
   app.disable("x-powered-by");
   app.use((request, response, next) => {
     response.set({
@@ -29,6 +40,18 @@ export function createApp({ configurationService, jsonBodyLimit = "16kb", logger
   app.get("/api/v1/configurations/:id", (request, response, next) => {
     try {
       response.json({ data: configurationService.getById(request.params.id) });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/v1/enquiries", async (request, response, next) => {
+    try {
+      if (!enquiryService) {
+        throw new ApiError(503, "ENQUIRY_UNAVAILABLE", "The enquiry service is unavailable.");
+      }
+      limitEnquiry(request.ip);
+      response.status(201).json({ data: await enquiryService.create(request.body) });
     } catch (error) {
       next(error);
     }

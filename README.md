@@ -29,7 +29,15 @@ Route handlers delegate to `ConfigurationService`; SQLite access is isolated in 
 
 Browser saves remain authoritative for the anonymous saved-design list. The application writes local storage before attempting the API and attaches a returned `serverId` alongside the existing browser-generated `id`. API failures never delete or replace local records. Existing version-1 inline `design` links remain supported; new share attempts use a server-backed `configuration` ID when available and automatically fall back to the inline format when unavailable.
 
-The API deliberately supports no update, delete, list, account, authentication, customer-data, payment, checkout, or administration endpoints.
+The public API deliberately supports no update, delete, list, account, authentication, payment, checkout, or administration endpoints. Customer enquiry data can only be written through the public API; it has no public read route.
+
+## Customer enquiries
+
+`POST /api/v1/enquiries` accepts contact and configurator quote enquiries. Customer details are stored in a separate write-only SQLite table and are never returned through a public read or list endpoint. Configurator submissions are normalized against the catalogue and priced again on the server; browser-submitted prices are ignored.
+
+The enquiry flow includes explicit consent, phone and email validation, a honeypot field, per-process rate limiting, safe length limits, generic failure responses, idempotent submission IDs, and automatic deletion of records older than `ENQUIRY_RETENTION_DAYS` (90 days by default). New records receive the business status `new`; notification delivery is tracked separately. The approved customer contact routes are WhatsApp `+91 98666 55409` and `manikanta8686@draftinteriors.com`.
+
+Enquiries are stored successfully even when email delivery is not configured. To send an email notification, set all `SMTP_*` variables shown in `.env.example` in the deployment environment. The server start, development, and migration commands load an optional root `.env` file automatically. SMTP passwords must remain outside source control. `ENQUIRY_RECIPIENT_EMAIL` controls the notification destination.
 
 ## Checks
 

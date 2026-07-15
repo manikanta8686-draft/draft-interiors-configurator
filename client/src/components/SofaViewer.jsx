@@ -214,7 +214,7 @@ export default function SofaViewer(props) {
 
   return <div className={`viewer-canvas-wrap${canvasReady ? " is-ready" : ""}`}>
     <Canvas
-      shadows
+      shadows="percentage"
       camera={{ position: framing.position, fov: 32, near: 0.1, far: 60 }}
       dpr={[1, 1.75]}
       onCreated={handleCreated}

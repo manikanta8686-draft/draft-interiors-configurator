@@ -35,6 +35,21 @@ export class SqliteConfigurationRepository {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     this.selectById = this.database.prepare("SELECT * FROM configurations WHERE id = ?");
+    this.insertEnquiry = this.database.prepare(`
+      INSERT INTO enquiries (
+        id, source, customer_name, customer_email, customer_phone, message,
+        configuration_json, pricing_json, notification_status, created_at, submission_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    this.updateEnquiryStatus = this.database.prepare(
+      "UPDATE enquiries SET notification_status = ? WHERE id = ?",
+    );
+    this.deleteExpiredEnquiries = this.database.prepare(
+      "DELETE FROM enquiries WHERE created_at < ?",
+    );
+    this.selectEnquiryBySubmissionId = this.database.prepare(
+      "SELECT id, created_at FROM enquiries WHERE submission_id = ?",
+    );
   }
 
   create(record) {
@@ -57,6 +72,36 @@ export class SqliteConfigurationRepository {
 
   findById(id) {
     return toRecord(this.selectById.get(id));
+  }
+
+  createEnquiry(record) {
+    this.insertEnquiry.run(
+      record.id,
+      record.source,
+      record.customer.name,
+      record.customer.email,
+      record.customer.phone,
+      record.message,
+      record.configuration ? JSON.stringify(record.configuration) : null,
+      record.pricing ? JSON.stringify(record.pricing) : null,
+      record.notificationStatus,
+      record.createdAt,
+      record.submissionId,
+    );
+    return record;
+  }
+
+  updateEnquiryNotificationStatus(id, status) {
+    this.updateEnquiryStatus.run(status, id);
+  }
+
+  findEnquiryReceiptBySubmissionId(submissionId) {
+    const row = this.selectEnquiryBySubmissionId.get(submissionId);
+    return row ? { id: row.id, status: "received", createdAt: row.created_at } : null;
+  }
+
+  purgeEnquiriesBefore(date) {
+    return this.deleteExpiredEnquiries.run(date.toISOString()).changes;
   }
 
   close() {

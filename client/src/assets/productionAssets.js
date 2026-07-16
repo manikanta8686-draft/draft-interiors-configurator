@@ -29,7 +29,7 @@ export const butterflyProductionAsset = Object.freeze({
   id: "butterfly",
   displayName: "Butterfly",
   catalogueModelId: null,
-  version: "0.4.0",
+  version: "0.5.0",
   status: "review",
   sourceRevision: "butterfly-geometry-v03-approved",
   coordinateSystem: Object.freeze({
@@ -66,12 +66,16 @@ export const butterflyProductionAsset = Object.freeze({
   }),
   meshRoles: REQUIRED_MESH_ROLES,
   materialRoles: REQUIRED_MATERIAL_ROLES,
+  internalReview: Object.freeze({
+    enabled: true,
+    catalogueModelIds: Object.freeze(["the-mercer"]),
+  }),
   variants: Object.freeze([
     Object.freeze({
       id: "butterfly-1880",
       label: "1880 × 900 mm",
-      assetUri: "/assets/products/butterfly/delivery/0.4.0/models/butterfly-1880-lod0.glb",
-      fallbackImageUri: "/assets/products/butterfly/delivery/0.4.0/previews/butterfly-v04-preview.png",
+      assetUri: "/assets/products/butterfly/delivery/0.5.0/models/butterfly-1880-lod0.glb",
+      fallbackImageUri: "/assets/products/butterfly/delivery/0.5.0/previews/butterfly-v05-preview.png",
       expectedBoundsMetres: Object.freeze({ x: 1.88, y: 1.02, z: 0.9 }),
       status: "review",
     }),
@@ -82,6 +86,18 @@ const productionAssets = new Map([[butterflyProductionAsset.id, butterflyProduct
 
 export function getProductionAsset(assetId) {
   return productionAssets.get(assetId) ?? null;
+}
+
+export function getInternalReviewProductionAsset(modelId) {
+  if (typeof modelId !== "string" || !modelId) return null;
+  return [...productionAssets.values()].find((asset) => (
+    asset.internalReview?.enabled
+    && asset.internalReview.catalogueModelIds?.includes(modelId)
+  )) ?? null;
+}
+
+export function getPreferredProductionVariant(asset) {
+  return asset?.variants?.find((variant) => variant.assetUri) ?? null;
 }
 
 export function validateProductionAssetManifest(asset) {
@@ -106,6 +122,9 @@ export function validateProductionAssetManifest(asset) {
     if (!asset.materialRoles?.includes(role)) errors.push(`Missing material role: ${role}.`);
   }
   if (!Array.isArray(asset.variants) || asset.variants.length === 0) errors.push("At least one geometry variant is required.");
+  if (asset.internalReview?.enabled && !Array.isArray(asset.internalReview.catalogueModelIds)) {
+    errors.push("Internal review catalogue bindings must be an array.");
+  }
 
   return { valid: errors.length === 0, errors };
 }

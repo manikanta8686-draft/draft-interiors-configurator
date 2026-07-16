@@ -1,8 +1,12 @@
 import { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, Environment, OrbitControls, RoundedBox } from "@react-three/drei";
+import { ContactShadows, Environment, OrbitControls, RoundedBox, useGLTF } from "@react-three/drei";
 import { useReducedMotion } from "framer-motion";
-import { ACESFilmicToneMapping, MeshStandardMaterial, TOUCH, Vector3 } from "three";
+import { ACESFilmicToneMapping, Color, MeshStandardMaterial, TOUCH, Vector3 } from "three";
+import {
+  getInternalReviewProductionAsset,
+  getPreferredProductionVariant,
+} from "../assets/productionAssets.js";
 import { useSofaMaterial } from "../materials/useSofaMaterial.js";
 import { easePremium, resolveViewerMotion } from "../motion/premiumMotion.js";
 import {
@@ -127,6 +131,132 @@ const ProceduralSofa = memo(function ProceduralSofa({
   </PresentationMotion>;
 });
 
+function tint(color, lightnessDelta) {
+  const value = new Color(color);
+  value.offsetHSL(0, 0, lightnessDelta);
+  return value;
+}
+
+function requestedWidthMetres(exactSize, fallback) {
+  const widthCm = Number.parseInt(String(exactSize ?? "").match(/\d+/)?.[0] ?? "", 10);
+  return Number.isFinite(widthCm) && widthCm >= 100 ? widthCm / 100 : fallback;
+}
+
+function calculateProductionDimensions(variant, exactSize) {
+  const bounds = variant.expectedBoundsMetres;
+  const width = requestedWidthMetres(exactSize, bounds.x);
+  return {
+    width,
+    depth: bounds.z,
+    height: bounds.y,
+    targetY: bounds.y * 0.48,
+    cameraDistanceMin: 2.92,
+    cameraXFactor: 0.62,
+    cameraY: 1.4,
+    cameraZoomMin: 2.58,
+    seatTop: 0.45,
+    armWidth: 0.075,
+    groundClearance: 0.2,
+    chaise: false,
+  };
+}
+
+const ProductionSofa = memo(function ProductionSofa({
+  asset,
+  variant,
+  color,
+  fabricId,
+  legs,
+  exactSize,
+  material: materialMetadata,
+  texture,
+  reducedMotion,
+  onTextureStatusChange,
+}) {
+  const { scene } = useGLTF(variant.assetUri);
+  const { material: selectedMaterial, status } = useSofaMaterial({
+    color,
+    fabricId,
+    material: materialMetadata,
+    texture,
+  });
+  const sourceMaterials = useMemo(() => {
+    const roles = {};
+    scene.traverse((object) => {
+      if (!object.isMesh) return;
+      const objectMaterials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of objectMaterials) {
+        if (material?.name && asset.materialRoles.includes(material.name)) roles[material.name] = material;
+      }
+    });
+    return roles;
+  }, [asset.materialRoles, scene]);
+  const materials = useMemo(() => {
+    const upholstery = selectedMaterial.clone();
+    const approvedFabric = sourceMaterials.upholstery_primary;
+    const isVelvet = fabricId === "brushed-velvet";
+    upholstery.name = "upholstery_primary";
+    upholstery.map = selectedMaterial.map ?? approvedFabric?.map ?? null;
+    upholstery.normalMap = selectedMaterial.normalMap;
+    upholstery.roughnessMap = approvedFabric?.roughnessMap ?? selectedMaterial.roughnessMap;
+    upholstery.aoMap = approvedFabric?.aoMap ?? null;
+    upholstery.normalScale = selectedMaterial.normalScale.clone().setScalar(isVelvet ? 0.1 : 0.18);
+    upholstery.aoMapIntensity = 0.68;
+    upholstery.color.set(color);
+    if (isVelvet) {
+      upholstery.roughness = Math.max(0.54, selectedMaterial.roughness);
+      upholstery.sheen = 0.3;
+      upholstery.sheenRoughness = 0.8;
+      upholstery.specularIntensity = 0.28;
+      upholstery.envMapIntensity = 0.52;
+    }
+    upholstery.needsUpdate = true;
+
+    const piping = new MeshStandardMaterial({
+      name: "piping",
+      color: tint(color, 0.075),
+      roughness: 0.76,
+      metalness: 0,
+    });
+    const stitching = new MeshStandardMaterial({
+      name: "stitching",
+      color: tint(color, -0.11),
+      roughness: 0.84,
+      metalness: 0,
+    });
+    const legsMaterial = new MeshStandardMaterial({
+      name: "legs_matte_black",
+      ...resolveLegFinish(legs),
+    });
+    return { upholstery_primary: upholstery, piping, stitching, legs_matte_black: legsMaterial };
+  }, [color, fabricId, legs, selectedMaterial, sourceMaterials]);
+  const model = useMemo(() => {
+    const clone = scene.clone(true);
+    clone.traverse((object) => {
+      if (!object.isMesh) return;
+      object.castShadow = true;
+      object.receiveShadow = true;
+      const resolveMaterial = (material) => materials[material?.name] ?? material;
+      object.material = Array.isArray(object.material)
+        ? object.material.map(resolveMaterial)
+        : resolveMaterial(object.material);
+    });
+    return clone;
+  }, [materials, scene]);
+  const scaleX = requestedWidthMetres(exactSize, variant.expectedBoundsMetres.x)
+    / variant.expectedBoundsMetres.x;
+  const signature = `${asset.id}:${asset.version}:${exactSize}:${fabricId}:${color}:${legs}`;
+
+  useEffect(() => onTextureStatusChange(status), [onTextureStatusChange, status]);
+  useEffect(() => () => Object.values(materials).forEach((material) => material.dispose()), [materials]);
+
+  return <PresentationMotion signature={signature} reducedMotion={reducedMotion}>
+    <group rotation={[0, -0.16, 0]} scale={[scaleX, 1, 1]}>
+      <primitive object={model} />
+    </group>
+  </PresentationMotion>;
+});
+
 function CameraRig({ dimensions, controls, resetSignal, reducedMotion }) {
   const camera = useThree((state) => state.camera);
   const size = useThree((state) => state.size);
@@ -192,12 +322,22 @@ function CameraRig({ dimensions, controls, resetSignal, reducedMotion }) {
 export default function SofaViewer(props) {
   const [canvasReady, setCanvasReady] = useState(false);
   const [textureStatus, setTextureStatus] = useState("ready");
+  const productionAsset = useMemo(
+    () => getInternalReviewProductionAsset(props.modelId),
+    [props.modelId],
+  );
+  const productionVariant = useMemo(
+    () => getPreferredProductionVariant(productionAsset),
+    [productionAsset],
+  );
   const [resetSignal, setResetSignal] = useState(0);
   const controls = useRef(null);
   const reducedMotion = Boolean(useReducedMotion());
   const dimensions = useMemo(
-    () => calculateProceduralDimensions({ size: props.size, type: props.type }),
-    [props.size, props.type],
+    () => productionVariant
+      ? calculateProductionDimensions(productionVariant, props.exactSize)
+      : calculateProceduralDimensions({ size: props.size, type: props.type }),
+    [productionVariant, props.exactSize, props.size, props.type],
   );
   const framing = useMemo(() => calculateCameraFraming(dimensions), [dimensions]);
   const handleCreated = useCallback(({ gl }) => {
@@ -207,7 +347,7 @@ export default function SofaViewer(props) {
   }, []);
   const handleTextureStatusChange = useCallback((status) => setTextureStatus(status), []);
   const statusMessage = !canvasReady
-    ? "Preparing illustrative 3D preview…"
+    ? "Preparing interactive 3D preview…"
     : textureStatus === "loading"
       ? "Refining material preview…"
       : textureStatus === "error" ? "Texture unavailable — showing colour preview" : null;
@@ -218,15 +358,16 @@ export default function SofaViewer(props) {
       camera={{ position: framing.position, fov: 32, near: 0.1, far: 60 }}
       dpr={[1, 1.75]}
       onCreated={handleCreated}
-      aria-label={`Interactive illustrative 3D preview of ${props.fabricName ?? "the selected sofa"}`}
+      aria-label={`Interactive 3D preview of ${props.fabricName ?? "the selected sofa"}`}
     >
-      <color attach="background" args={["#dfe1dd"]} />
-      <hemisphereLight args={["#f7f8f5", "#8b8f8a", 0.95]} />
+      <color attach="background" args={["#deded9"]} />
+      <hemisphereLight args={["#fbfaf6", "#777a74", 0.7]} />
       <directionalLight
         castShadow
-        position={[4.5, 6.5, 5]}
-        intensity={1.75}
-        shadow-mapSize={[1024, 1024]}
+        position={[4.8, 6.8, 5.2]}
+        intensity={1.42}
+        color="#fff8ec"
+        shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.00035}
         shadow-normalBias={0.035}
         shadow-camera-left={-5}
@@ -234,12 +375,23 @@ export default function SofaViewer(props) {
         shadow-camera-top={4}
         shadow-camera-bottom={-2}
       />
-      <directionalLight position={[-4, 3.5, 2]} intensity={0.34} color="#e4e7e4" />
+      <directionalLight position={[-4.2, 3.2, 2.4]} intensity={0.46} color="#e8edf0" />
+      <directionalLight position={[0.5, 4.2, -4.5]} intensity={0.52} color="#f3e7d5" />
       <Suspense fallback={null}>
-        <Environment preset="studio" environmentIntensity={0.44} />
+        <Environment preset="studio" environmentIntensity={0.54} />
       </Suspense>
-      <ProceduralSofa {...props} reducedMotion={reducedMotion} onTextureStatusChange={handleTextureStatusChange} />
-      <ContactShadows key={`${props.size}:${props.type}:${props.cushions}`} position={[0, 0.005, 0]} opacity={0.28} scale={9} blur={3} far={1.25} resolution={512} frames={reducedMotion ? 1 : 40} />
+      <Suspense fallback={null}>
+        {productionAsset && productionVariant
+          ? <ProductionSofa
+              {...props}
+              asset={productionAsset}
+              variant={productionVariant}
+              reducedMotion={reducedMotion}
+              onTextureStatusChange={handleTextureStatusChange}
+            />
+          : <ProceduralSofa {...props} reducedMotion={reducedMotion} onTextureStatusChange={handleTextureStatusChange} />}
+      </Suspense>
+      <ContactShadows key={`${productionAsset?.version ?? "procedural"}:${props.size}:${props.type}:${props.cushions}`} position={[0, 0.005, 0]} opacity={productionVariant ? 0.42 : 0.28} scale={productionVariant ? 5 : 9} blur={2.6} far={1.2} resolution={512} frames={reducedMotion ? 1 : 40} />
       <CameraRig dimensions={dimensions} controls={controls} resetSignal={resetSignal} reducedMotion={reducedMotion} />
     </Canvas>
     {statusMessage && <div className="viewer-loading" role="status">{statusMessage}</div>}

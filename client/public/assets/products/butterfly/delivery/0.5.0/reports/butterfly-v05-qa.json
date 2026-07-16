@@ -1,0 +1,23 @@
+{
+  "version": "0.5.0-review",
+  "status": "review_only",
+  "geometryBaseline": "Butterfly Geometry v03 (Approved)",
+  "geometryLocked": true,
+  "textureResolution": [
+    2048,
+    2048
+  ],
+  "textureMaps": [
+    "butterfly_velvet_basecolor_2k.png",
+    "butterfly_velvet_normal_2k.png",
+    "butterfly_velvet_roughness_2k.png",
+    "butterfly_velvet_ao_2k.png"
+  ],
+  "materialRoles": [
+    "legs_matte_black",
+    "piping",
+    "stitching",
+    "upholstery_primary"
+  ],
+  "objectCount": 14
+}

@@ -54,15 +54,26 @@ export function calculateCameraFraming(dimensions, aspectRatio = 1.45) {
   const width = dimensions?.width ?? SIZE_WIDTHS.Standard;
   const depth = dimensions?.depth ?? 1.58;
   const chaiseOffset = dimensions?.chaise ? 0.28 : 0;
-  const distance = Math.max(5.35, width * 1.16 + depth * 0.58);
+  const targetY = Number.isFinite(dimensions?.targetY) ? dimensions.targetY : 0.9;
+  const minimumDistance = Number.isFinite(dimensions?.cameraDistanceMin) ? dimensions.cameraDistanceMin : 5.35;
+  const cameraY = Number.isFinite(dimensions?.cameraY)
+    ? dimensions.cameraY
+    : 2.55 + (width - SIZE_WIDTHS.Standard) * 0.12;
+  const cameraXFactor = Number.isFinite(dimensions?.cameraXFactor)
+    ? dimensions.cameraXFactor
+    : 0.74;
+  const distance = Math.max(minimumDistance, width * 1.16 + depth * 0.58);
   const narrowViewportScale = Number.isFinite(aspectRatio) && aspectRatio < 1.2
     ? 1.2 / Math.max(0.7, aspectRatio)
     : 1;
+  const zoomMinimum = Number.isFinite(dimensions?.cameraZoomMin)
+    ? dimensions.cameraZoomMin
+    : Math.max(4.2, distance * 0.72 * narrowViewportScale);
 
   return {
-    position: [width * 0.74 * narrowViewportScale, 2.55 + (width - SIZE_WIDTHS.Standard) * 0.12, distance * narrowViewportScale],
-    target: [0, 0.9, chaiseOffset],
-    minDistance: Math.max(4.2, distance * 0.72 * narrowViewportScale),
+    position: [width * cameraXFactor * narrowViewportScale, cameraY, distance * narrowViewportScale],
+    target: [0, targetY, chaiseOffset],
+    minDistance: zoomMinimum,
     maxDistance: distance * 1.48 * narrowViewportScale,
   };
 }

@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   butterflyProductionAsset,
+  getInternalReviewProductionAsset,
+  getPreferredProductionVariant,
   getProductionAsset,
   getProductionAssetReadiness,
   PRODUCTION_ASSET_SCHEMA_VERSION,
@@ -16,6 +18,10 @@ test("Butterfly is a valid inactive internal review asset", () => {
   assert.equal(butterflyProductionAsset.catalogueModelId, null);
   assert.equal(getProductionAsset("butterfly"), butterflyProductionAsset);
   assert.equal(getProductionAsset("unknown"), null);
+  assert.equal(butterflyProductionAsset.version, "0.5.0");
+  assert.equal(getInternalReviewProductionAsset("the-mercer"), butterflyProductionAsset);
+  assert.equal(getInternalReviewProductionAsset("the-wren"), null);
+  assert.equal(getPreferredProductionVariant(butterflyProductionAsset)?.id, "butterfly-1880");
 });
 
 test("Butterfly remains unavailable while its supplied GLB is under review", () => {

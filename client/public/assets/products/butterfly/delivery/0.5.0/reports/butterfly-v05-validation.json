@@ -1,0 +1,93 @@
+{
+  "status": "pass",
+  "checks": {
+    "geometryUnchangedFromApprovedV03": true,
+    "semanticNamesValid": true,
+    "dimensionsValid": true,
+    "floorOriginValid": true,
+    "triangleCountStable": true,
+    "uv0PresentOnAllMeshes": true,
+    "materialRolesValid": true,
+    "transformsApplied": true
+  },
+  "baseline": {
+    "boundsMm": [
+      1880.0,
+      900.0,
+      1020.0
+    ],
+    "minZMm": 0.0,
+    "triangles": 59184,
+    "uvObjects": [
+      "arm_right",
+      "back_cushion_01",
+      "back_cushion_02",
+      "frame",
+      "seat_cushion_01",
+      "seat_cushion_02",
+      "seat_cushion_03"
+    ],
+    "badScale": [],
+    "badRotation": []
+  },
+  "candidate": {
+    "boundsMm": [
+      1880.0,
+      900.0,
+      1020.0
+    ],
+    "minZMm": 0.0,
+    "triangles": 59184,
+    "uvObjects": [
+      "arm_left",
+      "arm_right",
+      "back_cushion_01",
+      "back_cushion_02",
+      "back_cushion_03",
+      "frame",
+      "leg_front_left",
+      "leg_front_right",
+      "leg_rear_left",
+      "leg_rear_right",
+      "leg_support_center",
+      "seat_cushion_01",
+      "seat_cushion_02",
+      "seat_cushion_03"
+    ],
+    "badScale": [],
+    "badRotation": []
+  },
+  "reimportedGlb": {
+    "boundsMm": [
+      1880.0,
+      900.0,
+      1020.0
+    ],
+    "minZMm": 0.0,
+    "triangles": 59184,
+    "uvObjects": [
+      "arm_left",
+      "arm_right",
+      "back_cushion_01",
+      "back_cushion_02",
+      "back_cushion_03",
+      "frame",
+      "leg_front_left",
+      "leg_front_right",
+      "leg_rear_left",
+      "leg_rear_right",
+      "leg_support_center",
+      "seat_cushion_01",
+      "seat_cushion_02",
+      "seat_cushion_03"
+    ],
+    "badScale": [],
+    "badRotation": []
+  },
+  "candidateMaterials": [
+    "legs_matte_black",
+    "piping",
+    "stitching",
+    "upholstery_primary"
+  ]
+}

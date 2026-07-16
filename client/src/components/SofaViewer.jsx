@@ -9,6 +9,7 @@ import {
 } from "../assets/productionAssets.js";
 import { useSofaMaterial } from "../materials/useSofaMaterial.js";
 import { easePremium, resolveViewerMotion } from "../motion/premiumMotion.js";
+import { DEFAULT_ROOM_SCENE_ID, getRoomScene, ROOM_SCENES } from "../viewer/roomScenes.js";
 import {
   calculateCameraFraming,
   calculateCushionLayout,
@@ -257,6 +258,92 @@ const ProductionSofa = memo(function ProductionSofa({
   </PresentationMotion>;
 });
 
+const RoomEnvironment = memo(function RoomEnvironment({ scene }) {
+  return <group name={`room-${scene.id}`}>
+    <mesh position={[0, -0.012, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <planeGeometry args={[14, 14]} />
+      <meshStandardMaterial color={scene.floor} roughness={0.9} metalness={0} />
+    </mesh>
+    <mesh position={[0, 2.6, -2.35]} receiveShadow>
+      <planeGeometry args={[14, 5.2]} />
+      <meshStandardMaterial color={scene.wall} roughness={0.94} metalness={0} />
+    </mesh>
+    <mesh position={[-4.8, 2.6, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+      <planeGeometry args={[7, 5.2]} />
+      <meshStandardMaterial color={scene.wall} roughness={0.94} metalness={0} />
+    </mesh>
+    <mesh position={[0, 0.002, 0.08]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <planeGeometry args={[3.75, 2.65]} />
+      <meshStandardMaterial color={scene.rug} roughness={1} metalness={0} />
+    </mesh>
+    <mesh position={[0, 0.065, -2.29]} receiveShadow>
+      <boxGeometry args={[14, 0.13, 0.09]} />
+      <meshStandardMaterial color={scene.accent} roughness={0.78} metalness={0} />
+    </mesh>
+
+    {scene.id === "warm-showroom" && <group>
+      <mesh position={[0, 1.63, -2.3]} receiveShadow>
+        <boxGeometry args={[3.5, 2.72, 0.055]} />
+        <meshStandardMaterial color="#dfd2c1" roughness={0.9} />
+      </mesh>
+      <group position={[-1.45, 1.63, -2.25]}>
+      {Array.from({ length: 12 }, (_, index) => <mesh key={index} position={[index * 0.265, 0, 0]}>
+        <boxGeometry args={[0.032, 2.62, 0.045]} />
+        <meshStandardMaterial color={scene.accent} roughness={0.62} />
+      </mesh>)}
+      </group>
+    </group>}
+
+    {scene.id === "stone-gallery" && <group position={[0, 1.82, -2.29]}>
+      {[-1.18, 0, 1.18].map((x, index) => <group key={x} position={[x, 0, 0]}>
+        <mesh receiveShadow>
+        <boxGeometry args={[0.82, 1.36, 0.045]} />
+        <meshStandardMaterial color={scene.accent} roughness={0.96} />
+        </mesh>
+        <mesh position={[0, 0, 0.03]}>
+          <boxGeometry args={[0.66, 1.18, 0.025]} />
+          <meshStandardMaterial color={index === 1 ? "#b7b8b3" : "#deded9"} roughness={0.92} />
+        </mesh>
+      </group>)}
+    </group>}
+
+    {scene.id === "evening-lounge" && <group>
+      <mesh position={[0, 1.62, -2.3]} receiveShadow>
+        <boxGeometry args={[3.55, 2.72, 0.055]} />
+        <meshStandardMaterial color="#242721" roughness={0.9} />
+      </mesh>
+      {[-1.28, 1.28].map((x) => <group key={x}>
+        <mesh position={[x, 1.68, -2.24]}>
+          <boxGeometry args={[0.055, 0.48, 0.075]} />
+          <meshStandardMaterial color={scene.accent} emissive={scene.accent} emissiveIntensity={1.7} roughness={0.42} />
+        </mesh>
+        <pointLight position={[x, 1.66, -1.82]} color={scene.keyColor} intensity={1.65} distance={3} decay={2} />
+      </group>)}
+    </group>}
+  </group>;
+});
+
+function RoomLighting({ scene }) {
+  return <>
+    <hemisphereLight args={[scene.sky, scene.ground, scene.hemisphereIntensity]} />
+    <directionalLight
+      castShadow
+      position={[4.8, 6.8, 5.2]}
+      intensity={scene.keyIntensity}
+      color={scene.keyColor}
+      shadow-mapSize={[2048, 2048]}
+      shadow-bias={-0.00035}
+      shadow-normalBias={0.035}
+      shadow-camera-left={-5}
+      shadow-camera-right={5}
+      shadow-camera-top={4}
+      shadow-camera-bottom={-2}
+    />
+    <directionalLight position={[-4.2, 3.2, 2.4]} intensity={scene.fillIntensity} color={scene.fillColor} />
+    <directionalLight position={[0.5, 4.2, -4.5]} intensity={scene.rimIntensity} color={scene.rimColor} />
+  </>;
+}
+
 function CameraRig({ dimensions, controls, resetSignal, reducedMotion }) {
   const camera = useThree((state) => state.camera);
   const size = useThree((state) => state.size);
@@ -331,6 +418,8 @@ export default function SofaViewer(props) {
     [productionAsset],
   );
   const [resetSignal, setResetSignal] = useState(0);
+  const [roomSceneId, setRoomSceneId] = useState(DEFAULT_ROOM_SCENE_ID);
+  const roomScene = useMemo(() => getRoomScene(roomSceneId), [roomSceneId]);
   const controls = useRef(null);
   const reducedMotion = Boolean(useReducedMotion());
   const dimensions = useMemo(
@@ -360,25 +449,11 @@ export default function SofaViewer(props) {
       onCreated={handleCreated}
       aria-label={`Interactive 3D preview of ${props.fabricName ?? "the selected sofa"}`}
     >
-      <color attach="background" args={["#deded9"]} />
-      <hemisphereLight args={["#fbfaf6", "#777a74", 0.7]} />
-      <directionalLight
-        castShadow
-        position={[4.8, 6.8, 5.2]}
-        intensity={1.42}
-        color="#fff8ec"
-        shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.00035}
-        shadow-normalBias={0.035}
-        shadow-camera-left={-5}
-        shadow-camera-right={5}
-        shadow-camera-top={4}
-        shadow-camera-bottom={-2}
-      />
-      <directionalLight position={[-4.2, 3.2, 2.4]} intensity={0.46} color="#e8edf0" />
-      <directionalLight position={[0.5, 4.2, -4.5]} intensity={0.52} color="#f3e7d5" />
+      <color attach="background" args={[roomScene.background]} />
+      <RoomEnvironment scene={roomScene} />
+      <RoomLighting scene={roomScene} />
       <Suspense fallback={null}>
-        <Environment preset="studio" environmentIntensity={0.54} />
+        <Environment preset="studio" environmentIntensity={roomScene.environmentIntensity} />
       </Suspense>
       <Suspense fallback={null}>
         {productionAsset && productionVariant
@@ -391,10 +466,21 @@ export default function SofaViewer(props) {
             />
           : <ProceduralSofa {...props} reducedMotion={reducedMotion} onTextureStatusChange={handleTextureStatusChange} />}
       </Suspense>
-      <ContactShadows key={`${productionAsset?.version ?? "procedural"}:${props.size}:${props.type}:${props.cushions}`} position={[0, 0.005, 0]} opacity={productionVariant ? 0.42 : 0.28} scale={productionVariant ? 5 : 9} blur={2.6} far={1.2} resolution={512} frames={reducedMotion ? 1 : 40} />
+      <ContactShadows key={`${roomScene.id}:${productionAsset?.version ?? "procedural"}:${props.size}:${props.type}:${props.cushions}`} position={[0, 0.006, 0]} opacity={productionVariant ? roomScene.shadowOpacity : 0.28} scale={productionVariant ? 5 : 9} blur={2.6} far={1.2} resolution={512} frames={reducedMotion ? 1 : 28} />
       <CameraRig dimensions={dimensions} controls={controls} resetSignal={resetSignal} reducedMotion={reducedMotion} />
     </Canvas>
     {statusMessage && <div className="viewer-loading" role="status">{statusMessage}</div>}
+    <div className="room-scene-switcher" role="group" aria-label="Room environment">
+      <span>Room</span>
+      {ROOM_SCENES.map((scene) => <button
+        key={scene.id}
+        type="button"
+        className={scene.id === roomScene.id ? "selected" : ""}
+        aria-pressed={scene.id === roomScene.id}
+        aria-label={`${scene.description} environment`}
+        onClick={() => setRoomSceneId(scene.id)}
+      >{scene.label}</button>)}
+    </div>
     <button type="button" className="viewer-reset" onClick={() => setResetSignal((value) => value + 1)}>Reset view</button>
   </div>;
 }

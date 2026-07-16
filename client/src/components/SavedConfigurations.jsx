@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useConfigurator } from "../configurator/context.js";
 import { resolveSofaModel } from "../configurator/configuration.js";
@@ -8,6 +8,8 @@ import {
   createSharePath,
   createShareUrl,
 } from "../configurator/share.js";
+import { formatConfigurationReference } from "../sales/configurationSummary.js";
+import { downloadQuotation } from "../sales/generateQuotation.js";
 
 async function copyText(value) {
   if (navigator.clipboard?.writeText) {
@@ -35,7 +37,7 @@ async function copyText(value) {
   }
 }
 
-export default function SavedConfigurations() {
+export default function SavedConfigurations({ quote }) {
   const {
     configuration,
     deleteSavedConfiguration,
@@ -51,15 +53,23 @@ export default function SavedConfigurations() {
   const [name, setName] = useState("");
   const [notice, setNotice] = useState("");
   const [shareLink, setShareLink] = useState("");
+  const [configurationReference, setConfigurationReference] = useState(quote.reference);
+  const [pdfStatus, setPdfStatus] = useState("idle");
+
+  useEffect(() => {
+    setConfigurationReference(quote.reference);
+    setShareLink("");
+    setPdfStatus("idle");
+  }, [quote.reference]);
 
   function save(event) {
     event.preventDefault();
-    if (!saveConfiguration(name)) {
+    if (!saveConfiguration(name, configurationReference)) {
       setNotice("Please enter a name and try again.");
       return;
     }
     setName("");
-    setNotice("Configuration saved.");
+    setNotice(`Configuration ${configurationReference} saved.`);
   }
 
   async function share() {
@@ -71,6 +81,20 @@ export default function SavedConfigurations() {
     const copied = await copyText(url);
     const fallback = serverId ? "" : " The backend is unavailable, so this link uses the compatible browser format.";
     setNotice((copied ? "Share link copied." : "Automatic copy is unavailable. Select the link below to copy it.") + fallback);
+  }
+
+  async function downloadPdf() {
+    if (pdfStatus === "generating") return;
+    setPdfStatus("generating");
+    const url = shareLink || createShareUrl(configuration, window.location);
+    try {
+      await downloadQuotation({ ...quote, reference: configurationReference, shareUrl: url });
+      setNotice(`PDF quotation ${configurationReference} downloaded.`);
+      setPdfStatus("ready");
+    } catch {
+      setNotice("The PDF quotation could not be generated. Please try again.");
+      setPdfStatus("error");
+    }
   }
 
   function load(record) {
@@ -90,12 +114,13 @@ export default function SavedConfigurations() {
   }
 
   return <section className="saved-configurations" aria-labelledby="saved-configurations-title">
-    <div className="saved-configurations-heading"><div><p className="eyebrow">SAVE / SHARE</p><h2 id="saved-configurations-title">Keep this design.</h2></div><p>Name configurations for later, or copy a link to share this exact sofa.</p></div>
+    <div className="saved-configurations-heading"><div><p className="eyebrow">SAVE / SHARE / QUOTE</p><h2 id="saved-configurations-title">Keep this design.</h2></div><p>Save this configuration, share its unique link, or download a branded PDF quotation.</p></div>
     <form className="save-configuration-form" onSubmit={save}>
       <label htmlFor="configuration-name">Configuration name</label>
       <div><input id="configuration-name" value={name} onChange={(event) => setName(event.target.value)} maxLength="80" placeholder="e.g. Living room sofa" required /><button type="submit" className="button button-dark">Save configuration</button></div>
     </form>
-    <div className="configuration-actions"><button type="button" onClick={share}>Copy share link</button><button type="button" onClick={reset}>Reset design</button></div>
+    <div className="configuration-reference"><span>Configuration ID</span><strong>{configurationReference}</strong></div>
+    <div className="configuration-actions"><button type="button" onClick={share}>Copy share link</button><button type="button" onClick={downloadPdf} disabled={pdfStatus === "generating"}>{pdfStatus === "generating" ? "Preparing PDF..." : "Download PDF quote"}</button><button type="button" onClick={reset}>Reset design</button></div>
     {shareLink && <label className="share-link-output">Share link<input value={shareLink} onFocus={(event) => event.target.select()} readOnly /></label>}
     {persistenceStatus === "syncing" && <p className="configuration-notice" role="status">Saved locally. Syncing with the configuration service...</p>}
     {persistenceStatus === "synced" && <p className="configuration-notice" role="status">Configuration backed up.</p>}
@@ -104,7 +129,7 @@ export default function SavedConfigurations() {
     {notice && <p className="configuration-notice" role="status">{notice}</p>}
     <div className="saved-configuration-list">
       {savedConfigurations.length === 0 ? <EmptyState title="No saved configurations." message="Name this design to keep it here for your next visit." /> : savedConfigurations.map((record) => <article key={record.id}>
-        <div><h3>{record.name}</h3><p>{resolveSofaModel(record.modelId).name} · {new Date(record.updatedAt).toLocaleDateString("en-IN")}</p></div>
+        <div><h3>{record.name}</h3><p>{resolveSofaModel(record.modelId).name} - {new Date(record.updatedAt).toLocaleDateString("en-IN")}</p><small>{formatConfigurationReference(record.serverId ?? record.id)}</small></div>
         <div><button type="button" onClick={() => load(record)}>Load</button><button type="button" onClick={() => remove(record)}>Delete</button></div>
       </article>)}
     </div>

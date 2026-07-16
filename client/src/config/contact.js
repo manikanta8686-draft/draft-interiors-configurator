@@ -3,6 +3,7 @@ export const ENQUIRY_EMAIL = "manikanta8686@draftinteriors.com";
 
 export function createWhatsAppQuoteUrl({
   customerName,
+  reference,
   model,
   fabric,
   colour,
@@ -17,6 +18,7 @@ export function createWhatsAppQuoteUrl({
     "Hello Draft Interiors,",
     `My name is ${name}.`,
     "I'd like a quote for this sofa design:",
+    ...(reference ? [`Configuration ID: ${reference}`] : []),
     `Model: ${model}`,
     `Fabric: ${fabric}`,
     `Colour: ${colour}`,

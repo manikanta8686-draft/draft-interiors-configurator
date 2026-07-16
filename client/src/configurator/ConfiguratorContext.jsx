@@ -71,8 +71,8 @@ export function ConfiguratorProvider({ model, sharedConfiguration, hasSharedConf
     dispatch({ type: "reset", model });
   }, [model]);
 
-  const saveConfiguration = useCallback((name) => {
-    const record = createSavedConfigurationRecord({ name, configuration });
+  const saveConfiguration = useCallback((name, id) => {
+    const record = createSavedConfigurationRecord({ name, configuration, id });
     if (!record) return false;
     const items = addSavedConfiguration(savedConfigurations, record);
     if (!writeSavedConfigurations(localStorage, items)) {

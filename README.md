@@ -29,7 +29,7 @@ Route handlers delegate to `ConfigurationService`; SQLite access is isolated in 
 
 Browser saves remain authoritative for the anonymous saved-design list. The application writes local storage before attempting the API and attaches a returned `serverId` alongside the existing browser-generated `id`. API failures never delete or replace local records. Existing version-1 inline `design` links remain supported; new share attempts use a server-backed `configuration` ID when available and automatically fall back to the inline format when unavailable.
 
-The public API deliberately supports no update, delete, list, account, authentication, payment, checkout, or administration endpoints. Customer enquiry data can only be written through the public API; it has no public read route.
+The public API deliberately supports no enquiry read, update, or list routes. Customer enquiry data can only be written through the public contract; every sales-management route is isolated under authenticated `/api/v1/admin` endpoints.
 
 ## Customer enquiries
 
@@ -38,6 +38,18 @@ The public API deliberately supports no update, delete, list, account, authentic
 The enquiry flow includes explicit consent, phone and email validation, a honeypot field, per-process rate limiting, safe length limits, generic failure responses, idempotent submission IDs, and automatic deletion of records older than `ENQUIRY_RETENTION_DAYS` (90 days by default). New records receive the business status `new`; notification delivery is tracked separately. The approved customer contact routes are WhatsApp `+91 98666 55409` and `manikanta8686@draftinteriors.com`.
 
 Enquiries are stored successfully even when email delivery is not configured. To send an email notification, set all `SMTP_*` variables shown in `.env.example` in the deployment environment. The server start, development, and migration commands load an optional root `.env` file automatically. SMTP passwords must remain outside source control. `ENQUIRY_RECIPIENT_EMAIL` controls the notification destination.
+
+## Private sales office
+
+The Phase 7 dashboard is available at `/admin`. It provides enquiry statistics, search, filters, sorting, the six-stage sales workflow, full configuration details, private staff notes, customer contact shortcuts, and updated PDF quotations.
+
+Admin access is disabled until all `ADMIN_*` values in `.env.example` are configured. Generate a password hash locally without storing the plain password:
+
+```powershell
+npm --prefix server run admin:hash -- "use-a-long-private-password"
+```
+
+Copy only the generated `scrypt$...` value to `ADMIN_PASSWORD_HASH`. Use a random `ADMIN_SESSION_SECRET` of at least 32 characters. Production must use HTTPS and `ADMIN_SECURE_COOKIES=true`. Authentication uses a signed, expiring, HTTP-only, same-site cookie; state changes also require the dashboard's private request header. Admin secrets and `.env` must never be committed.
 
 ## Checks
 

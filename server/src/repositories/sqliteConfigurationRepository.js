@@ -22,6 +22,26 @@ function toRecord(row) {
   };
 }
 
+function parseJson(value) {
+  return value ? JSON.parse(value) : null;
+}
+
+function toEnquiryRecord(row, notes = []) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    source: row.source,
+    customer: { name: row.customer_name, email: row.customer_email, phone: row.customer_phone },
+    message: row.message,
+    configuration: parseJson(row.configuration_json),
+    pricing: parseJson(row.pricing_json),
+    notificationStatus: row.notification_status,
+    status: row.status,
+    createdAt: row.created_at,
+    notes,
+  };
+}
+
 export class SqliteConfigurationRepository {
   constructor(databasePath) {
     if (databasePath !== ":memory:") mkdirSync(dirname(databasePath), { recursive: true });
@@ -50,6 +70,15 @@ export class SqliteConfigurationRepository {
     this.selectEnquiryBySubmissionId = this.database.prepare(
       "SELECT id, created_at FROM enquiries WHERE submission_id = ?",
     );
+    this.selectEnquiryById = this.database.prepare("SELECT * FROM enquiries WHERE id = ?");
+    this.updateBusinessStatus = this.database.prepare("UPDATE enquiries SET status = ? WHERE id = ?");
+    this.insertEnquiryNote = this.database.prepare(`
+      INSERT INTO enquiry_notes (id, enquiry_id, body, author, created_at) VALUES (?, ?, ?, ?, ?)
+    `);
+    this.selectEnquiryNotes = this.database.prepare(`
+      SELECT id, enquiry_id, body, author, created_at
+      FROM enquiry_notes WHERE enquiry_id = ? ORDER BY created_at DESC
+    `);
   }
 
   create(record) {
@@ -98,6 +127,44 @@ export class SqliteConfigurationRepository {
   findEnquiryReceiptBySubmissionId(submissionId) {
     const row = this.selectEnquiryBySubmissionId.get(submissionId);
     return row ? { id: row.id, status: "received", createdAt: row.created_at } : null;
+  }
+
+  listEnquiries({ search, status, source, sort, page, pageSize }) {
+    const conditions = [];
+    const values = [];
+    if (search) {
+      conditions.push("(customer_name LIKE ? ESCAPE '\\' OR customer_email LIKE ? ESCAPE '\\' OR customer_phone LIKE ? ESCAPE '\\' OR id LIKE ? ESCAPE '\\')");
+      const escaped = search.replace(/[\\%_]/gu, "\\$&");
+      values.push(...Array(4).fill(`%${escaped}%`));
+    }
+    if (status) { conditions.push("status = ?"); values.push(status); }
+    if (source) { conditions.push("source = ?"); values.push(source); }
+    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    const total = this.database.prepare(`SELECT COUNT(*) AS count FROM enquiries ${where}`).get(...values).count;
+    const order = sort === "oldest" ? "ASC" : "DESC";
+    const rows = this.database.prepare(`
+      SELECT * FROM enquiries ${where} ORDER BY created_at ${order}, id ${order} LIMIT ? OFFSET ?
+    `).all(...values, pageSize, (page - 1) * pageSize);
+    const statusRows = this.database.prepare("SELECT status, COUNT(*) AS count FROM enquiries GROUP BY status").all();
+    const stats = Object.fromEntries(statusRows.map((row) => [row.status, row.count]));
+    stats.total = statusRows.reduce((sum, row) => sum + row.count, 0);
+    return { items: rows.map((row) => toEnquiryRecord(row)), total, page, pageSize, stats };
+  }
+
+  findEnquiryById(id) {
+    const notes = this.selectEnquiryNotes.all(id).map((row) => ({
+      id: row.id, enquiryId: row.enquiry_id, body: row.body, author: row.author, createdAt: row.created_at,
+    }));
+    return toEnquiryRecord(this.selectEnquiryById.get(id), notes);
+  }
+
+  updateEnquiryBusinessStatus(id, status) {
+    return this.updateBusinessStatus.run(status, id).changes > 0;
+  }
+
+  createEnquiryNote(note) {
+    this.insertEnquiryNote.run(note.id, note.enquiryId, note.body, note.author, note.createdAt);
+    return note;
   }
 
   purgeEnquiriesBefore(date) {

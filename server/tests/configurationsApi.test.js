@@ -160,7 +160,7 @@ test("SQLite migrations are repeatable", () => {
   const repository = new SqliteConfigurationRepository(":memory:");
   runMigrations(repository.database);
   const rowsBefore = repository.database.prepare("SELECT COUNT(*) AS count FROM schema_migrations").get();
-  assert.equal(rowsBefore.count, 4);
+  assert.equal(rowsBefore.count, 5);
   repository.close();
 });
 

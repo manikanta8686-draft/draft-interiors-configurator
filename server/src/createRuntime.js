@@ -4,6 +4,8 @@ import { EnquiryService } from "./enquiryService.js";
 import { readEnvironment } from "./config.js";
 import { SqliteConfigurationRepository } from "./repositories/sqliteConfigurationRepository.js";
 import { SmtpEnquiryNotifier } from "./smtpEnquiryNotifier.js";
+import { AdminAuthService } from "./adminAuthService.js";
+import { AdminService } from "./adminService.js";
 
 export function createRuntime(environment = process.env) {
   const configuration = readEnvironment(environment);
@@ -16,12 +18,16 @@ export function createRuntime(environment = process.env) {
       })
     : null;
   const enquiryService = new EnquiryService(repository, { notifier });
+  const adminAuthService = new AdminAuthService(configuration.admin);
+  const adminService = new AdminService(repository);
   repository.purgeEnquiriesBefore(
     new Date(Date.now() - configuration.enquiryRetentionDays * 24 * 60 * 60 * 1000),
   );
   const app = createApp({
     configurationService,
     enquiryService,
+    adminAuthService,
+    adminService,
     jsonBodyLimit: configuration.jsonBodyLimit,
   });
   return { app, configuration, repository };

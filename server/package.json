@@ -6,6 +6,7 @@
     "dev": "node --env-file-if-exists=../.env src/index.js",
     "start": "node --env-file-if-exists=../.env src/index.js",
     "migrate": "node --env-file-if-exists=../.env src/migrate.js",
+    "admin:hash": "node src/hashAdminPassword.js",
     "test": "node --test tests/*.test.js"
   },
   "engines": {

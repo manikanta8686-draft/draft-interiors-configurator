@@ -21,6 +21,8 @@ npm --prefix client run dev
 
 Vite proxies `/api` to `http://localhost:8787`. In production, expose the API through the same origin; `VITE_API_BASE_URL` can set that same-origin API prefix when needed. Server settings are read directly from `PORT`, `DATABASE_PATH`, and `JSON_BODY_LIMIT`; see `.env.example` for development values.
 
+For the supported single-origin staging build, run `npm run build`, set `NODE_ENV=production` and `SERVE_CLIENT=true`, then run `npm start`. The Node server serves the built React application and API together, including SPA routes such as `/admin`.
+
 ## Persistence architecture
 
 `POST /api/v1/configurations` validates and normalizes a configuration, recalculates its INR price from the application catalogue, assigns a UUID, and creates an immutable SQLite record. `GET /api/v1/configurations/:id` restores that record. The public contract is versioned under `/api/v1`.
@@ -50,6 +52,26 @@ npm --prefix server run admin:hash -- "use-a-long-private-password"
 ```
 
 Copy only the generated `scrypt$...` value to `ADMIN_PASSWORD_HASH`. Use a random `ADMIN_SESSION_SECRET` of at least 32 characters. Production must use HTTPS and `ADMIN_SECURE_COOKIES=true`. Authentication uses a signed, expiring, HTTP-only, same-site cookie; state changes also require the dashboard's private request header. Admin secrets and `.env` must never be committed.
+
+## Staging operations
+
+The API exposes `/api/v1/health/live` for process monitoring and `/api/v1/health/ready` for database-aware readiness monitoring. Production logs are structured JSON and include request IDs, status codes, and timing without customer messages or credentials.
+
+Create and verify an online SQLite backup with:
+
+```powershell
+npm run backup
+```
+
+`BACKUP_DIRECTORY` must be persistent and separate from the live database. Schedule the command daily, copy backups off the application server, and complete a restore drill before launch.
+
+After setting the staging environment, run:
+
+```powershell
+npm run staging:check
+```
+
+The complete internal-beta gate is documented in `PHASE_8A_STAGING_CHECKLIST.md`.
 
 ## Checks
 

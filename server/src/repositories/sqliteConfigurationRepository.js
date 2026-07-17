@@ -171,6 +171,11 @@ export class SqliteConfigurationRepository {
     return this.deleteExpiredEnquiries.run(date.toISOString()).changes;
   }
 
+  healthCheck() {
+    const result = this.database.prepare("PRAGMA quick_check").get();
+    return result?.quick_check === "ok";
+  }
+
   close() {
     this.database.close();
   }

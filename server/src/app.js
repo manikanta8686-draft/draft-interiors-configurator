@@ -1,4 +1,7 @@
 import express from "express";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { randomUUID } from "node:crypto";
 import { ApiError, RateLimitError } from "./errors.js";
 
 function createEnquiryRateLimiter({ max = 5, windowMs = 15 * 60 * 1000, createError = () => new RateLimitError() } = {}) {
@@ -11,7 +14,7 @@ function createEnquiryRateLimiter({ max = 5, windowMs = 15 * 60 * 1000, createEr
   };
 }
 
-export function createApp({ configurationService, enquiryService, adminAuthService, adminService, enquiryRateLimit, jsonBodyLimit = "16kb", logger = console }) {
+export function createApp({ configurationService, enquiryService, adminAuthService, adminService, enquiryRateLimit, jsonBodyLimit = "16kb", trustProxy = false, production = false, staticDirectory = null, readinessCheck = () => true, logger = console }) {
   const app = express();
   const limitEnquiry = createEnquiryRateLimiter(enquiryRateLimit);
   const limitAdminLogin = createEnquiryRateLimiter({
@@ -20,18 +23,44 @@ export function createApp({ configurationService, enquiryService, adminAuthServi
     createError: () => new ApiError(429, "TOO_MANY_ADMIN_ATTEMPTS", "Too many sign-in attempts. Please wait and try again."),
   });
   app.disable("x-powered-by");
+  if (trustProxy !== false) app.set("trust proxy", trustProxy);
   app.use((request, response, next) => {
+    const requestId = randomUUID();
+    request.requestId = requestId;
+    response.setHeader("X-Request-ID", requestId);
     response.set({
       "Cache-Control": "no-store",
-      "Content-Security-Policy": "default-src 'none'",
       "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+      "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
     });
+    if (production) response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    if (request.path.startsWith("/api/")) {
+      response.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'");
+    }
+    const startedAt = performance.now();
+    response.on("finish", () => logger.info?.("http_request", {
+      requestId,
+      method: request.method,
+      path: request.path,
+      status: response.statusCode,
+      durationMs: Math.round(performance.now() - startedAt),
+    }));
     next();
   });
   app.use(express.json({ limit: jsonBodyLimit, strict: true }));
 
-  app.get("/api/v1/health", (request, response) => {
-    response.json({ data: { status: "ok" } });
+  app.get(["/api/v1/health", "/api/v1/health/ready"], (request, response) => {
+    try {
+      if (!readinessCheck()) throw new Error("Readiness check failed");
+      response.json({ data: { status: "ready" } });
+    } catch {
+      response.status(503).json({ error: { code: "NOT_READY", message: "The service is not ready." } });
+    }
+  });
+
+  app.get("/api/v1/health/live", (request, response) => {
+    response.json({ data: { status: "live" } });
   });
 
   app.post("/api/v1/configurations", (request, response, next) => {
@@ -133,6 +162,28 @@ export function createApp({ configurationService, enquiryService, adminAuthServi
     }
   });
 
+  if (staticDirectory && existsSync(join(staticDirectory, "index.html"))) {
+    app.use(express.static(staticDirectory, {
+      index: false,
+      immutable: production,
+      maxAge: production ? "1h" : 0,
+      setHeaders(response, filePath) {
+        if (filePath.endsWith("index.html")) response.setHeader("Cache-Control", "no-cache");
+      },
+    }));
+    app.use((request, response, next) => {
+      if (request.method !== "GET" || request.path.startsWith("/api/") || !request.accepts("html")) {
+        next();
+        return;
+      }
+      response.set({
+        "Cache-Control": "no-cache",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://images.unsplash.com; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+      });
+      response.sendFile(join(staticDirectory, "index.html"));
+    });
+  }
+
   app.use((request, response) => {
     response.status(404).json({ error: { code: "NOT_FOUND", message: "Resource not found." } });
   });
@@ -150,7 +201,12 @@ export function createApp({ configurationService, enquiryService, adminAuthServi
       response.status(413).json({ error: { code: "PAYLOAD_TOO_LARGE", message: "Request body is too large." } });
       return;
     }
-    logger.error("Configuration API request failed", error);
+    logger.error?.("request_failed", {
+      requestId: request.requestId,
+      method: request.method,
+      path: request.path,
+      errorName: error?.name ?? "Error",
+    });
     response.status(500).json({ error: { code: "INTERNAL_ERROR", message: "The request could not be completed." } });
   });
 

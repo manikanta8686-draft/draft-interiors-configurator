@@ -1,6 +1,8 @@
 import { fileURLToPath } from "node:url";
 
 const defaultDatabasePath = fileURLToPath(new URL("../data/configurations.sqlite", import.meta.url));
+const defaultStaticDirectory = fileURLToPath(new URL("../../client/dist", import.meta.url));
+const defaultBackupDirectory = fileURLToPath(new URL("../backups", import.meta.url));
 
 function positiveInteger(value, fallback) {
   const parsed = Number.parseInt(value, 10);
@@ -12,11 +14,24 @@ function boolean(value, fallback = false) {
   return String(value).toLowerCase() === "true";
 }
 
+function trustProxy(value) {
+  if (value === undefined || value === "" || String(value).toLowerCase() === "false") return false;
+  if (String(value).toLowerCase() === "true") return true;
+  const hops = Number.parseInt(value, 10);
+  return Number.isInteger(hops) && hops > 0 ? hops : value;
+}
+
 export function readEnvironment(environment = process.env) {
   return {
     port: positiveInteger(environment.PORT, 8787),
     databasePath: environment.DATABASE_PATH || defaultDatabasePath,
     jsonBodyLimit: environment.JSON_BODY_LIMIT || "16kb",
+    nodeEnvironment: environment.NODE_ENV || "development",
+    trustProxy: trustProxy(environment.TRUST_PROXY),
+    serveClient: boolean(environment.SERVE_CLIENT, environment.NODE_ENV === "production"),
+    staticDirectory: environment.STATIC_DIRECTORY || defaultStaticDirectory,
+    backupDirectory: environment.BACKUP_DIRECTORY || defaultBackupDirectory,
+    backupRetentionDays: positiveInteger(environment.BACKUP_RETENTION_DAYS, 30),
     enquiryRetentionDays: positiveInteger(environment.ENQUIRY_RETENTION_DAYS, 90),
     enquiryRecipientEmail: environment.ENQUIRY_RECIPIENT_EMAIL || "manikanta8686@draftinteriors.com",
     admin: {

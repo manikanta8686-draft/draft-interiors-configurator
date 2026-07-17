@@ -6,8 +6,9 @@ import { SqliteConfigurationRepository } from "./repositories/sqliteConfiguratio
 import { SmtpEnquiryNotifier } from "./smtpEnquiryNotifier.js";
 import { AdminAuthService } from "./adminAuthService.js";
 import { AdminService } from "./adminService.js";
+import { operationalLogger } from "./logger.js";
 
-export function createRuntime(environment = process.env) {
+export function createRuntime(environment = process.env, { logger = operationalLogger } = {}) {
   const configuration = readEnvironment(environment);
   const repository = new SqliteConfigurationRepository(configuration.databasePath);
   const configurationService = new ConfigurationService(repository);
@@ -29,6 +30,11 @@ export function createRuntime(environment = process.env) {
     adminAuthService,
     adminService,
     jsonBodyLimit: configuration.jsonBodyLimit,
+    trustProxy: configuration.trustProxy,
+    production: configuration.nodeEnvironment === "production",
+    staticDirectory: configuration.serveClient ? configuration.staticDirectory : null,
+    readinessCheck: () => repository.healthCheck(),
+    logger,
   });
   return { app, configuration, repository };
 }

@@ -1,11 +1,17 @@
-import { mkdirSync, readdirSync, statSync, unlinkSync } from "node:fs";
+import { mkdirSync, readdirSync, realpathSync, rmSync, statSync, unlinkSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { backup, DatabaseSync } from "node:sqlite";
 import { readEnvironment } from "./config.js";
 import { operationalLogger } from "./logger.js";
 
 function backupName(now) {
   return `draft-interiors-${now.toISOString().replace(/[:.]/gu, "-")}.sqlite`;
+}
+
+function removeSidecars(path) {
+  rmSync(`${path}-shm`, { force: true });
+  rmSync(`${path}-wal`, { force: true });
 }
 
 function verifyBackup(path) {
@@ -19,6 +25,7 @@ function verifyBackup(path) {
     return { migrations: migrations.count };
   } finally {
     database.close();
+    removeSidecars(path);
   }
 }
 
@@ -29,6 +36,7 @@ function purgeExpiredBackups(directory, retentionDays, now) {
     const path = join(directory, name);
     if (statSync(path).mtimeMs < cutoff) {
       unlinkSync(path);
+      removeSidecars(path);
       removed += 1;
     }
   }
@@ -55,7 +63,7 @@ export async function createDatabaseBackup({ databasePath, backupDirectory, rete
   return { path: destination, file: basename(destination), migrations: verification.migrations, removed };
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file:///${process.argv[1].replaceAll("\\", "/")}`).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   const configuration = readEnvironment();
   try {
     const result = await createDatabaseBackup({

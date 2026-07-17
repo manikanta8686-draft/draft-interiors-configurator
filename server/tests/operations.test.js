@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { createApp } from "../src/app.js";
 import { createDatabaseBackup } from "../src/backupDatabase.js";
@@ -69,6 +70,7 @@ test("SQLite backup is online, verified, and kept outside the live database dire
     });
     assert.equal(result.file, "draft-interiors-2026-07-17T12-00-00-000Z.sqlite");
     assert.equal(result.migrations, 5);
+    assert.deepEqual(readdirSync(backupDirectory), [result.file]);
     const backupRepository = new SqliteConfigurationRepository(result.path);
     assert.equal(backupRepository.healthCheck(), true);
     backupRepository.close();
@@ -103,6 +105,51 @@ test("staging gate reports missing secrets without printing their values", () =>
     assert.equal(missing.ready, false);
     assert.equal(missing.checks.find((check) => check.name === "SMTP password").passed, false);
     assert.equal(JSON.stringify(missing).includes("not-printed"), false);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("operational commands execute when launched directly", () => {
+  const directory = mkdtempSync(join(tmpdir(), "draft-interiors-cli-"));
+  const databasePath = join(directory, "live.sqlite");
+  const backupDirectory = join(directory, "backups");
+  const linkedSource = join(directory, "current-src");
+  symlinkSync(join(import.meta.dirname, "../src"), linkedSource, process.platform === "win32" ? "junction" : "dir");
+  const repository = new SqliteConfigurationRepository(databasePath);
+  repository.close();
+  const environment = {
+    ...process.env,
+    NODE_ENV: "production",
+    SERVE_CLIENT: "true",
+    DATABASE_PATH: databasePath,
+    BACKUP_DIRECTORY: backupDirectory,
+    ADMIN_EMAIL: "admin@draftinteriors.com",
+    ADMIN_PASSWORD_HASH: "scrypt$c2FsdA$aGFzaA",
+    ADMIN_SESSION_SECRET: "a-secret-with-more-than-thirty-two-characters",
+    ADMIN_SECURE_COOKIES: "true",
+    SMTP_HOST: "smtp.example.com",
+    SMTP_USER: "mailer@example.com",
+    SMTP_PASSWORD: "not-printed",
+    SMTP_FROM: "Draft Interiors <mailer@example.com>",
+    ENQUIRY_RECIPIENT_EMAIL: "sales@draftinteriors.com",
+  };
+  try {
+    const backup = spawnSync(process.execPath, [join(linkedSource, "backupDatabase.js")], {
+      env: environment,
+      encoding: "utf8",
+    });
+    assert.equal(backup.status, 0, backup.stderr);
+    assert.match(backup.stdout, /database_backup_complete/u);
+    assert.equal(readdirSync(backupDirectory).some((name) => name.endsWith(".sqlite")), true);
+
+    const staging = spawnSync(process.execPath, [join(linkedSource, "stagingCheck.js")], {
+      env: environment,
+      encoding: "utf8",
+    });
+    assert.equal(staging.status, 0, staging.stderr);
+    assert.match(staging.stdout, /PASS  SMTP password/u);
+    assert.equal(staging.stdout.includes(environment.SMTP_PASSWORD), false);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

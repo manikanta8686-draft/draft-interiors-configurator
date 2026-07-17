@@ -1,6 +1,6 @@
 import { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, Environment, OrbitControls, RoundedBox, useGLTF } from "@react-three/drei";
+import { ContactShadows, Environment, Lightformer, OrbitControls, RoundedBox, useGLTF } from "@react-three/drei";
 import { useReducedMotion } from "framer-motion";
 import { ACESFilmicToneMapping, Color, MeshStandardMaterial, TOUCH, Vector3 } from "three";
 import {
@@ -344,6 +344,15 @@ function RoomLighting({ scene }) {
   </>;
 }
 
+const StudioEnvironment = memo(function StudioEnvironment({ scene }) {
+  return <Environment resolution={128} environmentIntensity={scene.environmentIntensity}>
+    <Lightformer form="rect" intensity={2.4} color={scene.keyColor} position={[0, 5, -4]} scale={[8, 4, 1]} />
+    <Lightformer form="rect" intensity={1.4} color={scene.fillColor} position={[-5, 2, 1]} rotation={[0, Math.PI / 2, 0]} scale={[5, 3, 1]} />
+    <Lightformer form="rect" intensity={1.8} color={scene.rimColor} position={[4, 3, -2]} rotation={[0, -Math.PI / 2, 0]} scale={[4, 2, 1]} />
+    <Lightformer form="ring" intensity={0.65} color={scene.sky} position={[0, 4, 4]} scale={3} />
+  </Environment>;
+});
+
 function CameraRig({ dimensions, controls, resetSignal, reducedMotion }) {
   const camera = useThree((state) => state.camera);
   const size = useThree((state) => state.size);
@@ -453,7 +462,7 @@ export default function SofaViewer(props) {
       <RoomEnvironment scene={roomScene} />
       <RoomLighting scene={roomScene} />
       <Suspense fallback={null}>
-        <Environment preset="studio" environmentIntensity={roomScene.environmentIntensity} />
+        <StudioEnvironment scene={roomScene} />
       </Suspense>
       <Suspense fallback={null}>
         {productionAsset && productionVariant

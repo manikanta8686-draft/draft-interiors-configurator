@@ -1,6 +1,6 @@
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { isAbsolute } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const defaultClientBuild = fileURLToPath(new URL("../../client/dist/index.html", import.meta.url));
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
@@ -25,7 +25,7 @@ export function checkStagingReadiness(environment = process.env, { clientBuild =
   return { ready: checks.every((check) => check.passed), checks };
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file:///${process.argv[1].replaceAll("\\", "/")}`).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   const result = checkStagingReadiness();
   for (const check of result.checks) process.stdout.write(`${check.passed ? "PASS" : "FAIL"}  ${check.name}\n`);
   if (!result.ready) process.exitCode = 1;

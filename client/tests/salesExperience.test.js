@@ -42,11 +42,38 @@ test("one complete sales summary feeds specification and enquiry content", () =>
   const quote = createQuote();
   assert.equal(quote.model, "The Mercer");
   assert.equal(quote.configuration.dimensions, "220 × 95 cm");
-  assert.equal(quote.configuration.upholstery, "Italian Linen");
+  assert.equal(quote.configuration.upholstery, "Performance Polyester / Microfiber");
   assert.equal(quote.configuration.legFinish, "Oak");
   assert.match(quote.configuration.warranty, /final terms confirmed/u);
   assert.match(buildEnquiryMessage(quote), /DI-20260716-ABCDEF123456/u);
-  assert.equal(quote.pricing.total, 148000);
+  assert.equal(quote.pricing.total, 40000);
+  assert.equal(quote.pricing.version, 2);
+});
+
+test("sales summaries and quotations use only the selected fabric tier adjustment", () => {
+  const model = resolveSofaModel("the-mercer");
+  const configuration = {
+    ...createDefaultConfiguration(model),
+    fabricId: "italian-linen",
+    colourId: "ink",
+    size: model.sizes.at(-1),
+    legs: "Brass",
+    cushions: 5,
+  };
+  const quote = buildSalesConfiguration({
+    configuration,
+    model,
+    ...getConfigurationCatalogue(configuration, model),
+    pricing: calculatePricing(configuration, model),
+    reference: "DI-20260716-LUXURY000001",
+  });
+
+  assert.equal(quote.pricing.total, 46000);
+  assert.deepEqual(quote.pricing.adjustments, [{
+    id: "fabric-adjustment",
+    label: "Linen & Jute Blend (Luxury) upholstery",
+    amount: 6000,
+  }]);
 });
 
 test("branded quotation generator creates a valid stable PDF document", async () => {

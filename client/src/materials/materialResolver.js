@@ -11,12 +11,13 @@ const DEFAULT_PRESENTATION = {
   envMapIntensity: 0.56,
 };
 const FABRIC_PRESENTATION = {
-  "italian-linen": { roughnessFloor: 0.78, sheen: 0.035, normalStrength: 0.56, specularIntensity: 0.28 },
-  "brushed-velvet": { roughnessFloor: 0.52, sheen: 0.18, sheenRoughness: 0.88, normalStrength: 0.3, specularIntensity: 0.3, envMapIntensity: 0.46 },
-  "textured-boucle": { roughnessFloor: 0.92, sheen: 0.025, sheenRoughness: 0.96, normalStrength: 0.78, specularIntensity: 0.24, envMapIntensity: 0.48 },
-  leather: { roughnessFloor: 0.58, sheen: 0.02, clearcoat: 0.06, clearcoatRoughness: 0.82, normalStrength: 0.42, specularIntensity: 0.5, envMapIntensity: 0.62 },
+  "italian-linen": { roughnessFloor: 0.82, sheen: 0.035, normalStrength: 0.85, specularIntensity: 0.26 },
+  "brushed-velvet": { roughnessFloor: 0.52, sheen: 0.18, sheenRoughness: 0.82, normalStrength: 0.25, specularIntensity: 0.32, envMapIntensity: 0.5 },
+  suede: { roughnessFloor: 0.76, sheen: 0.1, sheenRoughness: 0.94, normalStrength: 0.5, specularIntensity: 0.24, envMapIntensity: 0.42 },
+  "textured-boucle": { roughnessFloor: 0.94, sheen: 0.025, sheenRoughness: 0.96, normalStrength: 1.15, specularIntensity: 0.22, envMapIntensity: 0.46 },
+  leather: { roughnessFloor: 0.58, sheen: 0.02, clearcoat: 0.16, clearcoatRoughness: 0.68, normalStrength: 0.65, specularIntensity: 0.56, envMapIntensity: 0.68 },
   cotton: { roughnessFloor: 0.82, sheen: 0.025, normalStrength: 0.54, specularIntensity: 0.26 },
-  "performance-fabric": { roughnessFloor: 0.76, sheen: 0.03, normalStrength: 0.46, specularIntensity: 0.28 },
+  "performance-fabric": { roughnessFloor: 0.74, sheen: 0.03, normalStrength: 0.65, specularIntensity: 0.28 },
 };
 
 function clamp(value, minimum, maximum, fallback) {

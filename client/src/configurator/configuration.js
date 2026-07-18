@@ -22,6 +22,17 @@ export function resolveSofaModel(modelId) {
 
 function resolveFabricId(value) {
   if (typeof value !== "string") return null;
+  const legacyFabricIds = {
+    cotton: "textured-boucle",
+    Cotton: "textured-boucle",
+    "Italian Linen": "italian-linen",
+    "Brushed Velvet": "brushed-velvet",
+    "Textured Boucle": "textured-boucle",
+    "Textured Bouclé": "textured-boucle",
+    Leather: "leather",
+    "Performance Fabric": "performance-fabric",
+  };
+  if (legacyFabricIds[value]) return legacyFabricIds[value];
   return getFabricById(value)?.id
     ?? fabrics.find((fabric) => fabric.name === value)?.id
     ?? null;
@@ -86,7 +97,7 @@ export function configurationReducer(state, action) {
   }
 }
 
-export function createSavedDesign(configuration, model, price, savedAt = new Date()) {
+export function createSavedDesign(configuration, model, savedAt = new Date()) {
   return {
     version: CONFIGURATION_SCHEMA_VERSION,
     modelId: model.id,
@@ -95,7 +106,6 @@ export function createSavedDesign(configuration, model, price, savedAt = new Dat
     size: configuration.size,
     legs: configuration.legs,
     cushions: configuration.cushions,
-    price,
     savedAt: savedAt.toISOString(),
   };
 }

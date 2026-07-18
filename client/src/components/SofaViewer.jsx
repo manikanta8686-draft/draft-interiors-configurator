@@ -199,9 +199,9 @@ const ProductionSofa = memo(function ProductionSofa({
     upholstery.name = "upholstery_primary";
     upholstery.map = selectedMaterial.map ?? approvedFabric?.map ?? null;
     upholstery.normalMap = selectedMaterial.normalMap;
-    upholstery.roughnessMap = approvedFabric?.roughnessMap ?? selectedMaterial.roughnessMap;
+    upholstery.roughnessMap = selectedMaterial.roughnessMap ?? approvedFabric?.roughnessMap ?? null;
     upholstery.aoMap = approvedFabric?.aoMap ?? null;
-    upholstery.normalScale = selectedMaterial.normalScale.clone().setScalar(isVelvet ? 0.1 : 0.18);
+    upholstery.normalScale = selectedMaterial.normalScale.clone();
     upholstery.aoMapIntensity = 0.68;
     upholstery.color.set(color);
     if (isVelvet) {

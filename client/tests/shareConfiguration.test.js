@@ -53,7 +53,7 @@ test("decoded outdated options are normalized through the existing state boundar
   }));
   assert.deepEqual(parseSavedConfiguration(outdated, model), {
     modelId: model.id,
-    fabricId: "italian-linen",
+    fabricId: "performance-fabric",
     colourId: "oat",
     size: model.sizes[0],
     legs: "Brass",

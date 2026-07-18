@@ -90,3 +90,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 @keyframes skeleton-shimmer{to{background-position:-240% 0}}
 @media(max-width:800px){.state-page{padding:var(--space-7) var(--page-gutter)}.state-panel{padding:var(--space-6) var(--space-5)}.skeleton-title{width:85%;height:3rem}.skeleton-copy{width:70%}.skeleton-surface{height:14rem}}
 @media(prefers-reduced-motion:reduce){.skeleton{animation:none;background:var(--skeleton-base)}}
+.upholstery-guidance{margin:-1px 0 2px;padding:12px 13px;border:1px solid var(--line);border-top:0;background:var(--surface-subtle);display:grid;gap:5px}.upholstery-guidance strong{font:500 9px var(--font-meta);letter-spacing:.08em;text-transform:uppercase;color:var(--brand-bronze)}.upholstery-guidance span,.upholstery-guidance small{font-size:11px;line-height:1.5;color:var(--muted)}.upholstery-guidance small{color:var(--text-soft)}

@@ -88,7 +88,7 @@ test("normalizes option values and ignores browser-submitted prices", async () =
       ...createDefaultConfiguration(model),
       cushions: 5,
     });
-    assert.equal(record.pricing.total, 153600);
+    assert.equal(record.pricing.total, 40000);
     assert.equal(Object.hasOwn(record, "customerEmail"), false);
     assert.equal(Object.hasOwn(record, "price"), false);
   });
@@ -229,7 +229,7 @@ test("recalculates configurator enquiry pricing and records notification failure
     assert.doesNotMatch(await response.clone().text(), /password|failed/ui);
     const stored = repository.database.prepare("SELECT * FROM enquiries WHERE id = ?").get(firstId);
     assert.equal(stored.notification_status, "failed");
-    assert.equal(JSON.parse(stored.pricing_json).total, 148000);
+    assert.equal(JSON.parse(stored.pricing_json).total, 40000);
   });
   repository.close();
 });
@@ -300,7 +300,7 @@ test("formats complete customer-friendly quote notification emails", async () =>
     customer: { name: "A Customer", email: "customer@example.com", phone: "+91 90000 00000" },
     message: "Please send a formal quote for this design.",
     configuration,
-    pricing: { total: 148000 },
+    pricing: { total: 40000 },
     createdAt: "2026-07-15T10:00:00.000Z",
   });
 
@@ -309,12 +309,12 @@ test("formats complete customer-friendly quote notification emails", async () =>
   assert.equal(mail.subject, "New Draft Interiors quote enquiry — A Customer");
   for (const expected of [
     "Model: The Mercer",
-    "Fabric: Italian Linen",
+    "Fabric: Performance Polyester / Microfiber",
     "Colour: Oat",
     `Dimensions: ${configuration.size}`,
     "Leg finish: Oak",
     "Cushions: 3",
-    "Server-calculated estimate: INR 1,48,000",
+    "Server-calculated estimate: INR 40,000",
   ]) assert.match(mail.text, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
 });
 

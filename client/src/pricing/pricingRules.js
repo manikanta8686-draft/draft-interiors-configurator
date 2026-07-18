@@ -1,13 +1,10 @@
 export const PRICING_RULES = {
-  version: 1,
+  version: 2,
   currency: "INR",
-  legAdjustments: {
-    Oak: 0,
-    Walnut: 0,
-    Brass: 8000,
+  fabricTierAdjustments: {
+    Standard: 0,
+    Premium: 3000,
+    Luxury: 6000,
+    Imported: 10000,
   },
-  nonDefaultSizeAdjustment: 14000,
-  defaultCushionCount: 3,
-  cushionUnitAdjustment: 2800,
-  seatCountAdjustment: 0, // Future business data; no separate seat-count price currently exists.
 };

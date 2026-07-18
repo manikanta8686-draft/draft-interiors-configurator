@@ -1,0 +1,21 @@
+{
+  "status": "pass",
+  "version": "0.5.2-review",
+  "geometryBaseline": "Butterfly Geometry v03 (Approved)",
+  "geometryLocked": true,
+  "repair": "Both semantic arm shells recalculated for browser front-face culling",
+  "boundsBeforeMm": [1880, 900, 1020],
+  "boundsAfterMm": [1880, 900, 1020],
+  "semanticObjectCount": 14,
+  "armVertices": 498,
+  "armPolygons": 478,
+  "checks": {
+    "overallDimensionsPreserved": true,
+    "semanticObjectCountPreserved": true,
+    "armTopologyMatches": true,
+    "armMaterialsMatch": true,
+    "transformsApplied": true,
+    "leftExteriorVisibleWithBackfaceCulling": true,
+    "rightExteriorVisibleWithBackfaceCulling": true
+  }
+}

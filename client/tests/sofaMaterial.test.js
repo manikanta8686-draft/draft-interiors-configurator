@@ -21,6 +21,7 @@ import {
 
 test("every catalogue fabric and colour resolves to a visible material", () => {
   const roughnessValues = new Set();
+  const baseColorMaps = new Set();
 
   for (const fabric of fabrics) {
     for (const colour of colours) {
@@ -32,12 +33,17 @@ test("every catalogue fabric and colour resolves to a visible material", () => {
       assert.equal(resolved.color, colour.hex);
       assert.ok(resolved.roughness >= 0.2 && resolved.roughness <= 1);
       assert.ok(resolved.metalness >= 0 && resolved.metalness <= 0.15);
-      assert.deepEqual(resolved.maps, { baseColor: null, normal: null, roughness: null });
+      assert.match(resolved.maps.baseColor, /^\/assets\/materials\/upholstery\/.+\/basecolor-neutral\.jpg\?v=\d+$/);
+      assert.match(resolved.maps.normal, /^\/assets\/materials\/upholstery\/.+\/normal-gl\.jpg\?v=\d+$/);
+      assert.match(resolved.maps.roughness, /^\/assets\/materials\/upholstery\/.+\/roughness\.jpg\?v=\d+$/);
+      assert.ok(resolved.repeat[0] > 1 && resolved.repeat[1] > 1);
+      baseColorMaps.add(resolved.maps.baseColor);
       roughnessValues.add(resolved.roughness);
     }
   }
 
   assert.ok(roughnessValues.size > 1);
+  assert.equal(baseColorMaps.size, fabrics.length);
 });
 
 test("valid texture metadata resolves with safe repeat values", () => {
@@ -123,7 +129,7 @@ test("reset and saved configurations resolve the expected live material", () => 
     model,
   });
   const reset = configurationReducer(changed, { type: "reset", model });
-  assert.equal(getViewerConfiguration(reset, model).fabricId, "italian-linen");
+  assert.equal(getViewerConfiguration(reset, model).fabricId, "performance-fabric");
   assert.equal(getViewerConfiguration(reset, model).colourId, "oat");
 
   const saved = parseSavedConfiguration({

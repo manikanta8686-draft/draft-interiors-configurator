@@ -29,9 +29,9 @@ export const butterflyProductionAsset = Object.freeze({
   id: "butterfly",
   displayName: "Butterfly",
   catalogueModelId: null,
-  version: "0.5.0",
+  version: "0.5.2",
   status: "review",
-  sourceRevision: "butterfly-geometry-v03-approved",
+  sourceRevision: "butterfly-geometry-v03-approved-arm-culling-repair-v052",
   coordinateSystem: Object.freeze({
     units: "metres",
     upAxis: "Y",
@@ -74,8 +74,8 @@ export const butterflyProductionAsset = Object.freeze({
     Object.freeze({
       id: "butterfly-1880",
       label: "1880 × 900 mm",
-      assetUri: "/assets/products/butterfly/delivery/0.5.0/models/butterfly-1880-lod0.glb",
-      fallbackImageUri: "/assets/products/butterfly/delivery/0.5.0/previews/butterfly-v05-preview.png",
+      assetUri: "/assets/products/butterfly/delivery/0.5.2/models/butterfly-1880-lod0.glb",
+      fallbackImageUri: "/assets/products/butterfly/delivery/0.5.2/previews/butterfly-v052-preview.png",
       expectedBoundsMetres: Object.freeze({ x: 1.88, y: 1.02, z: 0.9 }),
       status: "review",
     }),

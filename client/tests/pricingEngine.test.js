@@ -23,35 +23,46 @@ test("every sofa model uses its current base price", () => {
   }
 });
 
+test("upholstery catalogue reflects the Indian-market fabric families", () => {
+  assert.deepEqual(fabrics.map((fabric) => fabric.name), [
+    "Performance Polyester / Microfiber",
+    "Linen & Jute Blend",
+    "Polyester Velvet",
+    "Suede",
+    "Cotton Chenille",
+    "Leatherette / PU",
+  ]);
+  assert.ok(fabrics.every((fabric) => fabric.description && fabric.climateGuidance && fabric.careInformation));
+});
+
 test("fabric adjustments come from the fabric catalogue", () => {
   const model = sofaModels[0];
   const defaults = createDefaultConfiguration(model);
+  const tierAdjustments = { Standard: 0, Premium: 3000, Luxury: 6000, Imported: 10000 };
 
   for (const fabric of fabrics) {
     const result = calculatePricing({ ...defaults, fabricId: fabric.id }, model);
-    assert.equal(adjustment(result, "fabric-adjustment").amount, fabric.priceAdjustment ?? 0);
-    assert.equal(result.total, model.price + (fabric.priceAdjustment ?? 0));
+    assert.equal(adjustment(result, "fabric-adjustment").amount, tierAdjustments[fabric.pricingTier]);
+    assert.equal(result.total, model.price + tierAdjustments[fabric.pricingTier]);
   }
 });
 
-test("existing size, leg, and cushion rules remain unchanged", () => {
+test("cosmetic size, leg, colour, and cushion choices do not change price", () => {
   const model = sofaModels[0];
   const defaults = createDefaultConfiguration(model);
+  const cosmeticVariants = [
+    { ...defaults, size: model.sizes[1] },
+    { ...defaults, legs: "Brass" },
+    { ...defaults, colourId: "ink" },
+    { ...defaults, cushions: 2 },
+    { ...defaults, cushions: 5 },
+  ];
 
-  const sizeResult = calculatePricing({ ...defaults, size: model.sizes[1] }, model);
-  assert.equal(adjustment(sizeResult, "size-adjustment").amount, 14000);
-
-  const brassResult = calculatePricing({ ...defaults, legs: "Brass" }, model);
-  assert.equal(adjustment(brassResult, "leg-finish-adjustment").amount, 8000);
-
-  const walnutResult = calculatePricing({ ...defaults, legs: "Walnut" }, model);
-  assert.equal(adjustment(walnutResult, "leg-finish-adjustment").amount, 0);
-
-  const twoCushions = calculatePricing({ ...defaults, cushions: 2 }, model);
-  assert.equal(adjustment(twoCushions, "cushion-adjustment").amount, -2800);
-
-  const fiveCushions = calculatePricing({ ...defaults, cushions: 5 }, model);
-  assert.equal(adjustment(fiveCushions, "cushion-adjustment").amount, 5600);
+  for (const configuration of cosmeticVariants) {
+    const result = calculatePricing(configuration, model);
+    assert.equal(result.total, model.price);
+    assert.equal(result.adjustments.length, 1);
+  }
 });
 
 test("combined pricing returns serializable line items and a deterministic total", () => {
@@ -67,8 +78,8 @@ test("combined pricing returns serializable line items and a deterministic total
   const second = calculatePricing(configuration, model);
 
   assert.deepEqual(first, second);
-  assert.equal(first.total, 196600);
-  assert.equal(first.adjustments.length, 4);
+  assert.equal(first.total, 43000);
+  assert.equal(first.adjustments.length, 1);
   assert.doesNotThrow(() => JSON.stringify(first));
 });
 
@@ -95,11 +106,10 @@ test("invalid and legacy configuration data fail safely", () => {
     cushions: 5,
     price: 1,
   }, model);
-  assert.equal(calculatePricing(legacy, model).total, 188100);
+  assert.equal(calculatePricing(legacy, model).total, 46000);
 });
 
 test("INR formatter keeps numbers out of the pricing result", () => {
-  assert.equal(formatINR(148000), "₹1,48,000");
-  assert.equal(formatINR(12500, { showSign: true }), "+₹12,500");
-  assert.equal(formatINR(-2800, { showSign: true }), "-₹2,800");
+  assert.equal(formatINR(40000), "₹40,000");
+  assert.equal(formatINR(3000, { showSign: true }), "+₹3,000");
 });

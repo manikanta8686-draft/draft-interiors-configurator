@@ -18,7 +18,7 @@ test("Butterfly is a valid inactive internal review asset", () => {
   assert.equal(butterflyProductionAsset.catalogueModelId, null);
   assert.equal(getProductionAsset("butterfly"), butterflyProductionAsset);
   assert.equal(getProductionAsset("unknown"), null);
-  assert.equal(butterflyProductionAsset.version, "0.5.0");
+  assert.equal(butterflyProductionAsset.version, "0.5.2");
   assert.equal(getInternalReviewProductionAsset("the-mercer"), butterflyProductionAsset);
   assert.equal(getInternalReviewProductionAsset("the-wren"), null);
   assert.equal(getPreferredProductionVariant(butterflyProductionAsset)?.id, "butterfly-1880");

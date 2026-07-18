@@ -80,7 +80,7 @@ export function ConfiguratorProvider({ model, sharedConfiguration, hasSharedConf
       return false;
     }
 
-    const savedDesign = createSavedDesign(configuration, model, pricing.total);
+    const savedDesign = createSavedDesign(configuration, model);
     setSavedConfigurations(items);
     setSaved(true);
     try {
@@ -105,7 +105,7 @@ export function ConfiguratorProvider({ model, sharedConfiguration, hasSharedConf
       setPersistenceStatus(result.status);
     });
     return true;
-  }, [configuration, model, pricing.total, savedConfigurations]);
+  }, [configuration, model, savedConfigurations]);
 
   const persistShareConfiguration = useCallback(async () => {
     setPersistenceStatus("syncing");

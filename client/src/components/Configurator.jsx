@@ -70,6 +70,11 @@ function ConfiguratorView() {
     <div className="config-layout">
       <div className="config-controls">
         <Options label="01 / UPHOLSTERY" value={design.fabricId} items={availableFabrics} onChange={set("fabricId")} />
+        <div className="upholstery-guidance" aria-live="polite">
+          <strong>{selectedFabric.pricingTier} fabric · {selectedFabric.durability} durability</strong>
+          <span>{selectedFabric.description}</span>
+          <small>{selectedFabric.climateGuidance}</small>
+        </div>
         <section className="option-group"><p>02 / COLOUR <span>{selectedColour.name}</span></p><div className="colour-options">{availableColours.map((option) => <button type="button" aria-label={option.name} aria-pressed={design.colourId === option.id} title={option.name} style={{ background: option.hex }} className={design.colourId === option.id ? "selected" : ""} onClick={() => set("colourId")(option.id)} key={option.id} />)}</div></section>
         <Options label="03 / DIMENSIONS" value={design.size} items={model.sizes} onChange={set("size")} />
         <Options label="04 / LEG FINISH" value={design.legs} items={legFinishes} onChange={set("legs")} />

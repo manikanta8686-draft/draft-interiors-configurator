@@ -69,7 +69,7 @@ test("saved records validate names, normalize retired options, and delete by ID"
       updatedAt: "invalid",
     }],
   });
-  assert.equal(parsed[0].fabricId, "italian-linen");
+  assert.equal(parsed[0].fabricId, "performance-fabric");
   assert.equal(parsed[0].colourId, "oat");
   assert.equal(parsed[0].size, model.sizes[0]);
   assert.equal(parsed[0].legs, "Oak");
@@ -95,7 +95,7 @@ test("the legacy single save migrates once and its stored price is not trusted",
   assert.equal(items[0].id, "legacy-design");
   assert.equal(items[0].fabricId, "brushed-velvet");
   assert.equal(Object.hasOwn(items[0], "price"), false);
-  assert.equal(calculatePricing(items[0], resolveSofaModel(items[0].modelId)).total, 188100);
+  assert.equal(calculatePricing(items[0], resolveSofaModel(items[0].modelId)).total, 46000);
 
   writeSavedConfigurations(storage, []);
   assert.deepEqual(initializeSavedConfigurations(storage), []);

@@ -1,0 +1,13 @@
+{
+  "version": "0.5.2-review",
+  "status": "pass",
+  "validator": "glTF Transform CLI 4.4.1",
+  "errors": 0,
+  "warnings": [
+    "Runtime-generated tangent space is required by normal-mapped material primitives, matching the accepted v0.5.0 runtime behavior."
+  ],
+  "optimizedGlbBytes": 2067268,
+  "textureEncoding": "WebP",
+  "semanticMeshRolesPreserved": true,
+  "browserFrontFaceCullingReviewed": true
+}

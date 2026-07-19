@@ -7,14 +7,14 @@ export default function Home() {
   return <main className="mood-editorial">
     <section className="home-hero">
       <div className="hero-copy-wrap">
-        <motion.p className="eyebrow" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={revealTransition()}>DRAFT INTERIORS / EST. 2012</motion.p>
+        <motion.img className="hero-brand-lockup" src="/brand/draft-interiors-full.png" alt="Draft Interiors — Crafting comfort, creating elegance" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={revealTransition()} />
         <motion.h1 initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={revealTransition(.08)}>Sit <em>beautifully.</em><br />Live completely.</motion.h1>
         <motion.p className="hero-copy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={revealTransition(.2)}>Thoughtfully made sofas for rooms that hold real life. Designed in India, made to stay awhile.</motion.p>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={revealTransition(.32)}><Link className="button button-dark" to="/configurator">Create your sofa <ArrowUpRight /></Link></motion.div>
       </div>
-      <div className="hero-image" role="img" aria-label="The Mercer sofa in boucle oat">
-        <div className="hero-sofa-art" aria-hidden="true"><i className="back" /><i className="arm left" /><i className="arm right" /><i className="seat" /><i className="leg one" /><i className="leg two" /></div>
-        <p>THE MERCER / IN BOUCLE OAT</p>
+      <div className="hero-image hero-image-real">
+        <img src="/images/butterfly/butterfly-studio-front.png" alt="Butterfly three-seat sofa by Draft Interiors" />
+        <p>BUTTERFLY / THREE-SEAT SOFA</p>
       </div>
     </section>
     <section className="statement">
@@ -23,7 +23,7 @@ export default function Home() {
       <p>We make pieces with restraint, warmth and the kind of comfort that asks you to stay for one more cup of tea.</p>
     </section>
     <section className="features">
-      <div className="feature-image" role="img" aria-label="A warm living room with a considered sofa" />
+      <img className="feature-image" src="/images/aston/edited/aston-front-studio.jpg" alt="Aston three-seat sofa-cum-bed by Draft Interiors" />
       <div className="feature-copy">
         <p className="eyebrow">DESIGNED AROUND YOU</p>
         <h2>Your room.<br /><em>Your rhythm.</em></h2>

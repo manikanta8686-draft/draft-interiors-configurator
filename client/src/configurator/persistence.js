@@ -139,7 +139,8 @@ export function initializeSavedConfigurations(storage, now = new Date()) {
 
     const legacy = JSON.parse(rawLegacy);
     const model = getSofaModelById(legacy?.modelId)
-      ?? sofaModels.find((candidate) => candidate.name === legacy?.model)
+      ?? sofaModels.find((candidate) => candidate.name === legacy?.model
+        || candidate.legacyNames?.includes(legacy?.model))
       ?? null;
     const configuration = model ? parseSavedConfiguration(legacy, model) : null;
     if (!configuration) {

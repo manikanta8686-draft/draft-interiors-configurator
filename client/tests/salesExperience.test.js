@@ -40,7 +40,7 @@ test("sales references are customer-readable and configuration-safe", () => {
 
 test("one complete sales summary feeds specification and enquiry content", () => {
   const quote = createQuote();
-  assert.equal(quote.model, "The Mercer");
+  assert.equal(quote.model, "Butterfly");
   assert.equal(quote.configuration.dimensions, "220 × 95 cm");
   assert.equal(quote.configuration.upholstery, "Performance Polyester / Microfiber");
   assert.equal(quote.configuration.legFinish, "Oak");
@@ -81,5 +81,5 @@ test("branded quotation generator creates a valid stable PDF document", async ()
   const bytes = await createQuotationPdfBytes(quote);
   assert.equal(new TextDecoder().decode(bytes.slice(0, 4)), "%PDF");
   assert.ok(bytes.byteLength > 3500);
-  assert.equal(quotationFileName(quote), "draft-interiors-the-mercer-di-20260716-abcdef123456.pdf");
+  assert.equal(quotationFileName(quote), "draft-interiors-butterfly-di-20260716-abcdef123456.pdf");
 });

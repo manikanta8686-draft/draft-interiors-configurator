@@ -23,6 +23,26 @@ test("every sofa model uses its current base price", () => {
   }
 });
 
+test("Nova preserves its confirmed catalogue price and dimensions", () => {
+  const nova = sofaModels.find((model) => model.id === "nova");
+
+  assert.ok(nova);
+  assert.equal(nova.price, 47999);
+  assert.equal(nova.dimensions, "183 × 94 × 83 cm");
+  assert.equal(nova.openDimensions, "183 × 188 cm");
+  assert.equal(nova.configuratorReady, false);
+});
+
+test("Aston preserves its confirmed catalogue price and sofa-bed dimensions", () => {
+  const aston = sofaModels.find((model) => model.id === "aston");
+
+  assert.ok(aston);
+  assert.equal(aston.price, 37999);
+  assert.equal(aston.dimensions, "220 × 95 cm");
+  assert.equal(aston.openDimensions, "220 × 188 cm");
+  assert.equal(aston.configuratorReady, false);
+});
+
 test("upholstery catalogue reflects the Indian-market fabric families", () => {
   assert.deepEqual(fabrics.map((fabric) => fabric.name), [
     "Performance Polyester / Microfiber",

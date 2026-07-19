@@ -115,7 +115,8 @@ export function parseSavedConfiguration(value, model) {
 
   try {
     const saved = typeof value === "string" ? JSON.parse(value) : value;
-    const matchesModel = saved?.modelId === model.id || (!saved?.modelId && saved?.model === model.name);
+    const matchesLegacyName = saved?.model === model.name || model.legacyNames?.includes(saved?.model);
+    const matchesModel = saved?.modelId === model.id || (!saved?.modelId && matchesLegacyName);
     return matchesModel ? normalizeConfiguration(saved, model) : null;
   } catch {
     return null;

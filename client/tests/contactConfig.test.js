@@ -16,7 +16,7 @@ test("approved Draft Interiors contact details are production-shaped", () => {
 test("WhatsApp quote includes the customer and complete readable design", () => {
   const url = createWhatsAppQuoteUrl({
     customerName: "A Customer",
-    model: "The Mercer",
+    model: "Butterfly",
     fabric: "Italian Linen",
     colour: "Oat",
     size: "220 × 95 cm",
@@ -29,7 +29,7 @@ test("WhatsApp quote includes the customer and complete readable design", () => 
   const message = new URL(url).searchParams.get("text");
   for (const expected of [
     "My name is A Customer.",
-    "Model: The Mercer",
+    "Model: Butterfly",
     "Fabric: Italian Linen",
     "Colour: Oat",
     "Dimensions: 220 × 95 cm",

@@ -122,6 +122,13 @@ Object.freeze({
 }),
 
   ...[
+    ["solo-haven-2","Solo Haven II","1 Seater","/images/file_000000000b848208980bc718ca7c603d.png"],
+    ["solo-haven-3","Solo Haven III","1 Seater","/images/file_0000000022348211b1b419879429ddff.png"],
+    ["solo-haven-4","Solo Haven IV","1 Seater","/images/file_0000000022448230aa2d500308c66a78.png"],
+    ["solo-haven-5","Solo Haven V","1 Seater","/images/file_000000002e58820ba4883cb7013262ee.png"],
+    ["solo-haven-6","Solo Haven VI","1 Seater","/images/file_00000000353881fd8d1ba6fbb87f9463.png"],
+  ].map(([id,name,category,src]) => Object.freeze({ id,name,category,price:null,description:"Contact us for details and pricing.",image:src,gallery:Object.freeze([Object.freeze({src,alt:name})]),sizes:Object.freeze(["Custom sizes available"]),dimensions:"Custom sizes available",configuratorReady:false })),
+  ...[
     ["1-seater-sofas","Solo Haven","1 Seater","/images/1-seater-sofas.png"],
     ["2-seater-sofas","Duo Haven","2 Seater","/images/2-seater-sofas.png"],
     ["2-seater-sofa-cum-beds","Duo Sleep","Sofa Cum Bed","/images/2-seater-sofa-cum-beds.png"],

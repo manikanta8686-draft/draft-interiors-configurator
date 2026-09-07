@@ -154,4 +154,4 @@ Object.freeze({
 
 // Only verified products with real photography and confirmed pricing belong
 // in the public collection.
-export const categories = Object.freeze(["All", "3 Seater", "Sofa Cum Bed", "4 Seater Lounge"]);
+export const categories = Object.freeze(["All", "1 Seater", "2 Seater", "3 Seater", "Sofa Cum Bed", "4 Seater Lounge", "L-Shape", "Recliner"]);

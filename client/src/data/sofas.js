@@ -120,6 +120,24 @@ Object.freeze({
 
     configuratorReady: false,
 }),
+
+  ...[
+    ["1-seater-sofas","Solo Haven","1 Seater","/images/1-seater-sofas.png"],
+    ["2-seater-sofas","Duo Haven","2 Seater","/images/2-seater-sofas.png"],
+    ["2-seater-sofa-cum-beds","Duo Sleep","Sofa Cum Bed","/images/2-seater-sofa-cum-beds.png"],
+    ["3-seater-sofa-cum-beds","Trio Sleep","Sofa Cum Bed","/images/3-seater-sofa-cum-beds.png"],
+    ["3-seater-sofas","Trio Haven","3 Seater","/images/3-seater-sofas.png"],
+    ["l-shape-sofas","Corner Luxe","L-Shape","/images/l-shape-sofas.png"],
+    ["recliner-sofa-sets","Recline Royale","Recliner","/images/recliner-sofa-sets.png"],
+  ].map(([id, name, category, src]) => Object.freeze({
+    id, name, category, price: null,
+    description: "Contact us for details and pricing.",
+    image: src,
+    gallery: Object.freeze([Object.freeze({ src, alt: name })]),
+    sizes: Object.freeze(["Custom sizes available"]),
+    dimensions: "Custom sizes available",
+    configuratorReady: false,
+  })),
 ]);
 
 // Only verified products with real photography and confirmed pricing belong

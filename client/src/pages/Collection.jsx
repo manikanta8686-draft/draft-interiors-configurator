@@ -35,7 +35,7 @@ export default function Collection() {
         </h1>
         <p>
           Verified Draft Interiors designs, photographed in our showroom with
-          confirmed dimensions and pricing.
+          confirmed dimensions. Contact us for current pricing.
         </p>
       </div>
 
@@ -108,8 +108,8 @@ export default function Collection() {
 
                 <dl>
                   <div>
-                    <dt>Starting at</dt>
-                    <dd>{`₹${sofa.price.toLocaleString("en-IN")}`}</dd>
+                    <dt>Pricing</dt>
+                    <dd>Contact for pricing</dd>
                   </div>
 
                   <div>

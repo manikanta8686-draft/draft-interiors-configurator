@@ -10,7 +10,10 @@ export default function Home() {
         <motion.img className="hero-brand-lockup" src="/brand/draft-interiors-full.png" alt="Draft Interiors — Crafting comfort, creating elegance" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={revealTransition()} />
         <motion.h1 initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={revealTransition(.08)}>Sit <em>beautifully.</em><br />Live completely.</motion.h1>
         <motion.p className="hero-copy" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={revealTransition(.2)}>Thoughtfully made sofas for rooms that hold real life. Designed in India, made to stay awhile.</motion.p>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={revealTransition(.32)}><Link className="button button-dark" to="/configurator">Create your sofa <ArrowUpRight /></Link></motion.div>
+        <motion.div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center" }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={revealTransition(.32)}>
+          <Link className="button button-dark" to="/configurator">Create your sofa <ArrowUpRight /></Link>
+          <a className="button button-dark" href="https://catalogue.draftinteriors.com/" style={{ maxWidth: "100%", whiteSpace: "normal", textAlign: "center" }}>Explore Our Furniture Catalogue <ArrowUpRight /></a>
+        </motion.div>
       </div>
       <div className="hero-image hero-image-real">
         <img src="/images/file_00000000036081fa841a77418556be37.png" alt="Draft Interiors sofa collection" />
